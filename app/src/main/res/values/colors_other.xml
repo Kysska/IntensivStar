@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="tabIndicatorColor">@color/red</color>
+
+    <color name="tabSelectedColor">@color/textPrimary</color>
+
+    <color name="tabUnselectedColor">@color/greyMedium</color>
+
+    <color name="bottomNavUnselectedColor">@color/deepSkyBlue</color>
+
+    <color name="bottomNavSelectedColor">@color/colorPrimary</color>
+
+    <color name="stars">@color/orange</color>
+</resources>

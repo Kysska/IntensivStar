@@ -5,7 +5,7 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/mainFeedBackground"
+        android:background="@color/colorPrimary"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
@@ -32,7 +32,7 @@
                     android:layout_marginBottom="@dimen/material_margin_normal"
                     android:gravity="left"
                     android:text="@string/main_title"
-                    android:textColor="@color/textColorLight"
+                    android:textColor="@color/textPrimary"
                     android:textSize="26sp"
                     android:textStyle="bold"
                     tools:ignore="RtlHardcoded"

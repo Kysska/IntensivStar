@@ -4,13 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimary"
+    android:background="@color/secondaryBackground"
     tools:context=".ui.profile.ProfileFragment">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:background="@color/primaryBackground"
         tools:context=".MainActivity">
 
         <RelativeLayout
@@ -31,7 +32,7 @@
                 android:layout_below="@+id/avatar"
                 android:layout_centerHorizontal="true"
                 android:text="@string/placeholder"
-                android:textColor="@color/textColorLight"
+                android:textColor="@color/textPrimary"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:text="User Name" />
@@ -69,19 +70,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:background="@color/blueDark"
-            app:tabIndicatorColor="@color/selectedControlIndicator"
+            android:background="@color/secondaryBackground"
+            app:tabIndicatorColor="@color/tabIndicatorColor"
             app:tabIndicatorFullWidth="false"
             app:tabMode="fixed"
-            app:tabSelectedTextColor="@android:color/white"
+            app:tabSelectedTextColor="@color/tabSelectedColor"
             app:tabTextAppearance="@android:style/TextAppearance.Widget.TabWidget"
-            app:tabTextColor="@color/textColorGrey" />
+            app:tabTextColor="@color/tabUnselectedColor" />
 
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/profileViewPager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/blueDark" />
+            android:background="@color/secondaryBackground" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

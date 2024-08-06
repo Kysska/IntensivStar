@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primaryBackground">@color/colorPrimary</color>
+    <color name="secondaryBackground">@color/blueDark</color>
+
+    <color name="bottomNavigationBackground">@color/blueDark</color>
+</resources>

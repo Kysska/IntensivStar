@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_gravity="bottom"
-        android:background="@color/blueDark"
+        android:background="@color/bottomNavigationBackground"
         app:itemIconTint="@drawable/bottom_navigation_item"
         app:itemTextColor="@drawable/bottom_navigation_item"
         app:menu="@menu/bottom_nav_menu" />
