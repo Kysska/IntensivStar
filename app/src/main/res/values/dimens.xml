@@ -4,6 +4,11 @@
     <dimen name="material_margin_small">8dp</dimen>
     <dimen name="material_margin_super_small">4dp</dimen>
 
+    <dimen name="material_padding_large">32dp</dimen>
+    <dimen name="material_padding_normal">16dp</dimen>
+    <dimen name="material_padding_small">8dp</dimen>
+    <dimen name="material_padding_super_small">4dp</dimen>
+
     <dimen name="image_preview_height">120dp</dimen>
     <dimen name="image_preview_width">75dp</dimen>
 
@@ -23,4 +28,11 @@
     <!-- TV Show Card Item -->
     <dimen name="tvshow_card_height">192dp</dimen>
     <dimen name="tvshow_card_text_width">96dp</dimen>
+
+    <!-- Image Item Cast -->
+    <dimen name="image_cast_item">88dp</dimen>
+
+    <!-- App Bar Movie Detail -->
+    <dimen name="app_bar_height">300dp</dimen>
+
 </resources>

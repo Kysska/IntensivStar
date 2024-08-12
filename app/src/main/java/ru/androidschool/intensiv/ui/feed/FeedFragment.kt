@@ -8,10 +8,12 @@ import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import ru.androidschool.intensiv.R
-import ru.androidschool.intensiv.data.MockRepository
-import ru.androidschool.intensiv.data.Movie
+import ru.androidschool.intensiv.data.network.util.CustomResult
+import ru.androidschool.intensiv.data.network.MovieApiClient
+import ru.androidschool.intensiv.data.repository.NowPlayingMovieRepositoryImpl
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
+import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.afterTextChanged
 import timber.log.Timber
 
@@ -27,6 +29,10 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
+    }
+
+    private val nowPlayingMovieRepositoryImpl: NowPlayingMovieRepositoryImpl by lazy {
+        NowPlayingMovieRepositoryImpl(MovieApiClient.apiClient)
     }
 
     private val options = navOptions {
@@ -58,22 +64,35 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
             }
         }
 
-        // Используя Мок-репозиторий получаем фэйковый список фильмов
-        val moviesList =
-                MockRepository.getMovies().map {
-                    MovieItem(it) { movie ->
-                        openMovieDetails(
-                            movie
-                        )
-                    }
-                }.toList()
-
-        binding.moviesRecyclerView.adapter = adapter.apply { addAll(moviesList) }
+        loadNowPlayingMovies()
     }
 
-    private fun openMovieDetails(movie: Movie) {
+    private fun loadNowPlayingMovies() {
+        nowPlayingMovieRepositoryImpl.getNowPlayingMovies {
+            when (it) {
+                is CustomResult.Loading -> {}
+                is CustomResult.Success -> {
+                    updateMovieCardList(it.data)
+                }
+                is CustomResult.Error -> {}
+            }
+        }
+    }
+
+    private fun updateMovieCardList(moviesList: List<MovieCard>) {
+        val moviesListItem = moviesList.map {
+            MovieItem(it) { movie ->
+                openMovieDetails(
+                    movie
+                )
+            }
+        }.toList()
+        binding.moviesRecyclerView.adapter = adapter.apply { addAll(moviesListItem) }
+    }
+
+    private fun openMovieDetails(movie: MovieCard) {
         val bundle = Bundle()
-        bundle.putString(KEY_TITLE, movie.title)
+        bundle.putInt(KEY_ID, movie.id)
         findNavController().navigate(R.id.movie_details_fragment, bundle, options)
     }
 
@@ -101,6 +120,7 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
     companion object {
         const val MIN_LENGTH = 3
         const val KEY_TITLE = "title"
+        const val KEY_ID = "id"
         const val KEY_SEARCH = "search"
     }
 }
