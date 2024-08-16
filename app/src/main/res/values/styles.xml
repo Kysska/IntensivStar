@@ -70,6 +70,14 @@
         <item name="android:adjustViewBounds">true</item>
     </style>
 
+    <!-- Checkbox Style -->
+    <style name="ImageCheckBox" parent="Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="android:button">@null</item>
+        <item name="android:background">@drawable/checkbox_selector</item>
+        <item name="android:padding">0dp</item>
+    </style>
+
+
     <!-- Button Watch Style -->
     <style name="ButtonWatchStyle" parent="SmallTitleCustomStyle">
         <item name="android:layout_width">120dp</item>

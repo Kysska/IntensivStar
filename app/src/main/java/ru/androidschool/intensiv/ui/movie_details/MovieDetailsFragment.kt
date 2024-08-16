@@ -14,6 +14,8 @@ import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.data.repository.CastRepositoryImpl
 import ru.androidschool.intensiv.data.repository.MovieDetailRepositoryImpl
 import ru.androidschool.intensiv.databinding.MovieDetailsFragmentBinding
+import ru.androidschool.intensiv.domain.CastRepository
+import ru.androidschool.intensiv.domain.MovieDetailRepository
 import ru.androidschool.intensiv.domain.entity.CastCard
 import ru.androidschool.intensiv.domain.entity.MovieDetail
 import ru.androidschool.intensiv.ui.feed.FeedFragment
@@ -27,11 +29,11 @@ class MovieDetailsFragment : Fragment(R.layout.movie_details_fragment) {
         GroupAdapter<GroupieViewHolder>()
     }
 
-    private val movieDetailRepositoryImpl: MovieDetailRepositoryImpl by lazy {
+    private val movieDetailRepositoryImpl: MovieDetailRepository by lazy {
         MovieDetailRepositoryImpl(MovieApiClient.apiClient)
     }
 
-    private val castRepositoryImpl: CastRepositoryImpl by lazy {
+    private val castRepositoryImpl: CastRepository by lazy {
         CastRepositoryImpl(MovieApiClient.apiClient)
     }
 

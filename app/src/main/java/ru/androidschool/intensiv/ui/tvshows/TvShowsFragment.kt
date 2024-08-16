@@ -12,6 +12,7 @@ import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.data.network.MovieApiClient
 import ru.androidschool.intensiv.data.repository.TvShowRepositoryImpl
 import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
+import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 
 class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
@@ -23,7 +24,7 @@ class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
         GroupAdapter<GroupieViewHolder>()
     }
 
-    private val tvShowRepositoryImpl: TvShowRepositoryImpl by lazy {
+    private val tvShowRepositoryImpl: MovieRepository by lazy {
         TvShowRepositoryImpl(MovieApiClient.apiClient)
     }
 
@@ -43,7 +44,7 @@ class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
     }
 
     private fun loadNowPlayingMovies() {
-        tvShowRepositoryImpl.getTvShows {
+        tvShowRepositoryImpl.getMovies {
             when (it) {
                 is CustomResult.Loading -> {}
                 is CustomResult.Success -> {

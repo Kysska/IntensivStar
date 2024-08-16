@@ -25,10 +25,14 @@ android {
     buildTypes {
         debug {
             testCoverageEnabled true
+            buildConfigField 'String', 'BASE_URL', '"https://api.themoviedb.org/3/"'
+            buildConfigField 'String', 'IMAGE_URL', '"https://image.tmdb.org/t/p/w500"'
         }
         release {
             testCoverageEnabled true
             minifyEnabled false
+            buildConfigField 'String', 'BASE_URL', '"https://api.themoviedb.org/3/"'
+            buildConfigField 'String', 'IMAGE_URL', '"https://image.tmdb.org/t/p/w500"'
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

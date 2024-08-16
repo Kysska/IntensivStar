@@ -11,10 +11,14 @@ import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.data.network.MovieApiClient
 import ru.androidschool.intensiv.data.repository.NowPlayingMovieRepositoryImpl
+import ru.androidschool.intensiv.data.repository.PopularMovieRepositoryImpl
+import ru.androidschool.intensiv.data.repository.UpcomingMovieRepositoryImpl
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
+import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
-import ru.androidschool.intensiv.ui.afterTextChanged
+import ru.androidschool.intensiv.utils.MovieType
+import ru.androidschool.intensiv.utils.extensions.afterTextChanged
 import timber.log.Timber
 
 class FeedFragment : Fragment(R.layout.feed_fragment) {
@@ -31,8 +35,16 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
         GroupAdapter<GroupieViewHolder>()
     }
 
-    private val nowPlayingMovieRepositoryImpl: NowPlayingMovieRepositoryImpl by lazy {
+    private val nowPlayingMovieRepositoryImpl: MovieRepository by lazy {
         NowPlayingMovieRepositoryImpl(MovieApiClient.apiClient)
+    }
+
+    private val popularMovieRepositoryImpl: MovieRepository by lazy {
+        PopularMovieRepositoryImpl(MovieApiClient.apiClient)
+    }
+
+    private val upcomingMovieRepositoryImpl: MovieRepository by lazy {
+        UpcomingMovieRepositoryImpl(MovieApiClient.apiClient)
     }
 
     private val options = navOptions {
@@ -65,29 +77,64 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
         }
 
         loadNowPlayingMovies()
+        loadPopularMovies()
+        loadUpcomingMovies()
     }
 
     private fun loadNowPlayingMovies() {
-        nowPlayingMovieRepositoryImpl.getNowPlayingMovies {
+        nowPlayingMovieRepositoryImpl.getMovies {
             when (it) {
                 is CustomResult.Loading -> {}
                 is CustomResult.Success -> {
-                    updateMovieCardList(it.data)
+                    updateMovieCardList(it.data, MovieType.NOW_PLAYING)
                 }
                 is CustomResult.Error -> {}
             }
         }
     }
 
-    private fun updateMovieCardList(moviesList: List<MovieCard>) {
-        val moviesListItem = moviesList.map {
-            MovieItem(it) { movie ->
-                openMovieDetails(
-                    movie
-                )
+    private fun loadPopularMovies() {
+        popularMovieRepositoryImpl.getMovies {
+            when (it) {
+                is CustomResult.Loading -> {}
+                is CustomResult.Success -> {
+                    updateMovieCardList(it.data, MovieType.POPULAR)
+                }
+                is CustomResult.Error -> {}
             }
-        }.toList()
-        binding.moviesRecyclerView.adapter = adapter.apply { addAll(moviesListItem) }
+        }
+    }
+
+    private fun loadUpcomingMovies() {
+        upcomingMovieRepositoryImpl.getMovies {
+            when (it) {
+                is CustomResult.Loading -> {}
+                is CustomResult.Success -> {
+                    updateMovieCardList(it.data, MovieType.UPCOMING)
+                }
+                is CustomResult.Error -> {}
+            }
+        }
+    }
+
+    private fun updateMovieCardList(moviesList: List<MovieCard>, movieType: MovieType) {
+        val movieItems = moviesList.map { movie ->
+            MovieItem(movie) { clickedMovie ->
+                openMovieDetails(clickedMovie)
+            }
+        }
+
+        val mainCardContainer = MainCardContainer(
+            title = when (movieType) {
+                MovieType.NOW_PLAYING -> R.string.recommended
+                MovieType.POPULAR -> R.string.popular
+                MovieType.UPCOMING -> R.string.upcoming
+            },
+            items = movieItems
+        )
+
+        adapter.add(mainCardContainer)
+        binding.moviesRecyclerView.adapter = adapter
     }
 
     private fun openMovieDetails(movie: MovieCard) {

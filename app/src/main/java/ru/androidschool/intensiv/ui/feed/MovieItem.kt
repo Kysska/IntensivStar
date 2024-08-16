@@ -1,11 +1,11 @@
 package ru.androidschool.intensiv.ui.feed
 
 import android.view.View
-import com.squareup.picasso.Picasso
 import com.xwray.groupie.viewbinding.BindableItem
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.ItemWithTextBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.utils.extensions.loadImage
 
 class MovieItem(
     private val content: MovieCard,
@@ -21,9 +21,7 @@ class MovieItem(
             onClick.invoke(content)
         }
 
-        Picasso.get()
-            .load(content.posterPath)
-            .into(view.imagePreview)
+        view.imagePreview.loadImage(content.posterPath)
     }
 
     override fun initializeViewBinding(v: View) = ItemWithTextBinding.bind(v)

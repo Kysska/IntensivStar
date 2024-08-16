@@ -1,5 +1,7 @@
 package ru.androidschool.intensiv.domain.entity
 
+import ru.androidschool.intensiv.utils.extensions.toRating
+
 data class MovieCard(
     val id: Int = 0,
     val title: String = "",
@@ -7,5 +9,5 @@ data class MovieCard(
     val voteAverage: Double = 0.0
 ) {
     val rating: Float
-        get() = voteAverage.div(2).toFloat()
+        get() = voteAverage.toRating()
 }
