@@ -8,9 +8,11 @@ import androidx.fragment.app.Fragment
 import com.squareup.picasso.Picasso
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.data.network.MovieApiClient
-import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.data.repository.CastRepositoryImpl
 import ru.androidschool.intensiv.data.repository.MovieDetailRepositoryImpl
 import ru.androidschool.intensiv.databinding.MovieDetailsFragmentBinding
@@ -19,6 +21,7 @@ import ru.androidschool.intensiv.domain.MovieDetailRepository
 import ru.androidschool.intensiv.domain.entity.CastCard
 import ru.androidschool.intensiv.domain.entity.MovieDetail
 import ru.androidschool.intensiv.ui.feed.FeedFragment
+import timber.log.Timber
 
 class MovieDetailsFragment : Fragment(R.layout.movie_details_fragment) {
 
@@ -27,6 +30,10 @@ class MovieDetailsFragment : Fragment(R.layout.movie_details_fragment) {
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
+    }
+
+    private val compositeDisposable by lazy {
+        CompositeDisposable()
     }
 
     private val movieDetailRepositoryImpl: MovieDetailRepository by lazy {
@@ -60,15 +67,16 @@ class MovieDetailsFragment : Fragment(R.layout.movie_details_fragment) {
     }
 
     private fun loadMovieDetailData(id: Int) {
-        movieDetailRepositoryImpl.getMovieDetail(id) {
-            when (it) {
-                is CustomResult.Loading -> {}
-                is CustomResult.Success -> {
-                    updateMovieDetailUi(it.data)
-                }
-                is CustomResult.Error -> {}
-            }
-        }
+        compositeDisposable.add(
+            movieDetailRepositoryImpl.getMovieDetail(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ movie ->
+                    updateMovieDetailUi(movie)
+                }, { error ->
+                    Timber.e(error, "Error loading movie detail")
+                })
+        )
     }
 
     private fun updateMovieDetailUi(movie: MovieDetail) {
@@ -87,15 +95,16 @@ class MovieDetailsFragment : Fragment(R.layout.movie_details_fragment) {
     }
 
     private fun loadCastList(id: Int) {
-        castRepositoryImpl.getCasts(id) {
-            when (it) {
-                is CustomResult.Loading -> {}
-                is CustomResult.Success -> {
-                    updateCastListUI(it.data)
-                }
-                is CustomResult.Error -> {}
-            }
-        }
+        compositeDisposable.add(
+            castRepositoryImpl.getCasts(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ casts ->
+                    updateCastListUI(casts)
+                }, { error ->
+                    Timber.e(error, "Error loading casts")
+                })
+        )
     }
 
     private fun updateCastListUI(castList: List<CastCard>) {
@@ -108,5 +117,10 @@ class MovieDetailsFragment : Fragment(R.layout.movie_details_fragment) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.clear()
     }
 }

@@ -7,8 +7,11 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import ru.androidschool.intensiv.R
-import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.data.network.MovieApiClient
 import ru.androidschool.intensiv.data.repository.NowPlayingMovieRepositoryImpl
 import ru.androidschool.intensiv.data.repository.PopularMovieRepositoryImpl
@@ -18,8 +21,8 @@ import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.utils.MovieType
-import ru.androidschool.intensiv.utils.extensions.afterTextChanged
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 class FeedFragment : Fragment(R.layout.feed_fragment) {
 
@@ -30,6 +33,10 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
     // onDestroyView.
     private val binding get() = _binding!!
     private val searchBinding get() = _searchBinding!!
+
+    private val compositeDisposable by lazy {
+        CompositeDisposable()
+    }
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
@@ -69,52 +76,26 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        searchBinding.searchToolbar.binding.searchEditText.afterTextChanged {
-            Timber.d(it.toString())
-            if (it.toString().length > MIN_LENGTH) {
-                openSearch(it.toString())
-            }
-        }
+        setupSearchObserver()
 
-        loadNowPlayingMovies()
-        loadPopularMovies()
-        loadUpcomingMovies()
+        binding.moviesRecyclerView.adapter = adapter
+
+        loadMovies(MovieType.NOW_PLAYING, nowPlayingMovieRepositoryImpl)
+        loadMovies(MovieType.POPULAR, popularMovieRepositoryImpl)
+        loadMovies(MovieType.UPCOMING, upcomingMovieRepositoryImpl)
     }
 
-    private fun loadNowPlayingMovies() {
-        nowPlayingMovieRepositoryImpl.getMovies {
-            when (it) {
-                is CustomResult.Loading -> {}
-                is CustomResult.Success -> {
-                    updateMovieCardList(it.data, MovieType.NOW_PLAYING)
-                }
-                is CustomResult.Error -> {}
-            }
-        }
-    }
-
-    private fun loadPopularMovies() {
-        popularMovieRepositoryImpl.getMovies {
-            when (it) {
-                is CustomResult.Loading -> {}
-                is CustomResult.Success -> {
-                    updateMovieCardList(it.data, MovieType.POPULAR)
-                }
-                is CustomResult.Error -> {}
-            }
-        }
-    }
-
-    private fun loadUpcomingMovies() {
-        upcomingMovieRepositoryImpl.getMovies {
-            when (it) {
-                is CustomResult.Loading -> {}
-                is CustomResult.Success -> {
-                    updateMovieCardList(it.data, MovieType.UPCOMING)
-                }
-                is CustomResult.Error -> {}
-            }
-        }
+    private fun loadMovies(movieType: MovieType, repository: MovieRepository) {
+        compositeDisposable.add(
+            repository.getMovies()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ movies ->
+                    updateMovieCardList(movies, movieType)
+                }, { error ->
+                    Timber.e(error, "Error loading movies $movieType")
+                })
+        )
     }
 
     private fun updateMovieCardList(moviesList: List<MovieCard>, movieType: MovieType) {
@@ -134,7 +115,6 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
         )
 
         adapter.add(mainCardContainer)
-        binding.moviesRecyclerView.adapter = adapter
     }
 
     private fun openMovieDetails(movie: MovieCard) {
@@ -147,6 +127,26 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
         val bundle = Bundle()
         bundle.putString(KEY_SEARCH, searchText)
         findNavController().navigate(R.id.search_dest, bundle, options)
+    }
+
+    private fun setupSearchObserver() {
+        compositeDisposable.add(
+            observeSearchTextWithFilter()
+                .subscribe(
+                    { searchText -> openSearch(searchText) },
+                    { error -> Timber.e(error, "Error in search") }
+                )
+        )
+    }
+
+    private fun observeSearchTextWithFilter(): Observable<String> {
+        return searchBinding.searchToolbar.onTextChangedObservable
+            .debounce(500, TimeUnit.MILLISECONDS)
+            .map { it.trim() }
+            .filter { it.length > MIN_LENGTH }
+            .distinctUntilChanged()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun onStop() {
@@ -162,6 +162,11 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
         super.onDestroyView()
         _binding = null
         _searchBinding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.clear()
     }
 
     companion object {

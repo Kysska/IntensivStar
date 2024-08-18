@@ -7,13 +7,16 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import ru.androidschool.intensiv.R
-import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.data.network.MovieApiClient
 import ru.androidschool.intensiv.data.repository.TvShowRepositoryImpl
 import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
 import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
+import timber.log.Timber
 
 class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
 
@@ -22,6 +25,10 @@ class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
+    }
+
+    private val compositeDisposable by lazy {
+        CompositeDisposable()
     }
 
     private val tvShowRepositoryImpl: MovieRepository by lazy {
@@ -44,15 +51,16 @@ class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
     }
 
     private fun loadNowPlayingMovies() {
-        tvShowRepositoryImpl.getMovies {
-            when (it) {
-                is CustomResult.Loading -> {}
-                is CustomResult.Success -> {
-                    updateTvShowList(it.data)
-                }
-                is CustomResult.Error -> {}
-            }
-        }
+        compositeDisposable.add(
+            tvShowRepositoryImpl.getMovies()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ movies ->
+                    updateTvShowList(movies)
+                }, { error ->
+                    Timber.e(error, "Error loading tv show")
+                })
+        )
     }
 
     private fun updateTvShowList(tvShowList: List<MovieCard>) {
@@ -66,5 +74,10 @@ class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.clear()
     }
 }
