@@ -1,18 +1,18 @@
 package ru.androidschool.intensiv.data.repository
 
+import io.reactivex.Single
 import ru.androidschool.intensiv.data.network.MovieApiInterface
 import ru.androidschool.intensiv.data.network.mapper.CastCardMapper
-import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.domain.CastRepository
 import ru.androidschool.intensiv.domain.entity.CastCard
 
-class CastRepositoryImpl(private val movieApiInterface: MovieApiInterface) : BaseRepository(), CastRepository {
+class CastRepositoryImpl(private val movieApiInterface: MovieApiInterface) : BaseRepository<List<CastCard>>(), CastRepository {
 
-    override fun getCasts(id: Int, callback: (CustomResult<List<CastCard>>) -> Unit) {
-        handleResponse(
-            call = movieApiInterface.getCastsListById(id),
-            mapper = { response -> response.castsList?.map { CastCardMapper.toViewObject(it) } ?: emptyList() },
-            callback = callback
+    override fun getCasts(id: Int): Single<List<CastCard>> {
+        return fetchData(
+            apiCall = { movieApiInterface.getCastsListById(id) },
+            mapper = { response -> CastCardMapper.toViewObject(response.castsList ?: emptyList()) },
+            emptyResult = emptyList()
         )
     }
 }

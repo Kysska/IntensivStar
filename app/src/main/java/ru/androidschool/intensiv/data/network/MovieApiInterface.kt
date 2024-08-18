@@ -1,6 +1,6 @@
 package ru.androidschool.intensiv.data.network
 
-import retrofit2.Call
+import io.reactivex.Single
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -17,37 +17,37 @@ interface MovieApiInterface {
     @GET("movie/now_playing")
     fun getNowPlayingMovies(
         @Query("language") language: String = defaultLanguage
-    ): Call<MovieListResponse>
+    ): Single<MovieListResponse>
 
     @GET("movie/popular")
     fun getPopularMovies(
         @Query("language") language: String = defaultLanguage
-    ): Call<MovieListResponse>
+    ): Single<MovieListResponse>
 
     @GET("movie/top_rated")
     fun getTopRatedMovies(
         @Query("language") language: String = defaultLanguage
-    ): Call<MovieListResponse>
+    ): Single<MovieListResponse>
 
     @GET("movie/upcoming")
     fun getUpcomingMovies(
         @Query("language") language: String = defaultLanguage
-    ): Call<MovieListResponse>
+    ): Single<MovieListResponse>
 
     @GET("tv/popular")
     fun getPopularTvShows(
         @Query("language") language: String = defaultLanguage
-    ): Call<MovieListResponse>
+    ): Single<MovieListResponse>
 
     @GET("movie/{id}")
     fun getMovieDetailById(
         @Path("id") id: Int,
         @Query("language") language: String = defaultLanguage
-    ): Call<MovieDetailResponse>
+    ): Single<MovieDetailResponse>
 
     @GET("movie/{id}/credits")
     fun getCastsListById(
         @Path("id") id: Int,
         @Query("language") language: String = defaultLanguage
-    ): Call<CreditResponse>
+    ): Single<CreditResponse>
 }
