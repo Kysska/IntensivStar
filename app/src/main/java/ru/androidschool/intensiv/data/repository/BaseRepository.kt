@@ -1,36 +1,22 @@
 package ru.androidschool.intensiv.data.repository
 
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import ru.androidschool.intensiv.data.network.util.CustomResult
+import io.reactivex.Single
+import timber.log.Timber
 
-abstract class BaseRepository {
+abstract class BaseRepository<T>() {
 
-    fun <T, R> handleResponse(
-        call: Call<T>,
-        mapper: (T) -> R,
-        callback: (CustomResult<R>) -> Unit
-    ) {
-        callback(CustomResult.Loading)
-
-        call.enqueue(object : Callback<T> {
-            override fun onResponse(call: Call<T>, response: Response<T>) {
-                if (response.isSuccessful) {
-                    val result = response.body()?.let { mapper(it) }
-                    if (result != null) {
-                        callback(CustomResult.Success(result))
-                    } else {
-                        callback(CustomResult.Error(Exception("Empty body")))
-                    }
-                } else {
-                    callback(CustomResult.Error(Exception("error: ${response.code()}")))
-                }
+    protected fun <R> fetchData(
+        apiCall: () -> Single<R>,
+        mapper: (R) -> T,
+        emptyResult: T,
+        tag: String
+    ): Single<T> {
+        return apiCall()
+            .map { response ->
+                mapper(response) ?: emptyResult
             }
-
-            override fun onFailure(call: Call<T>, t: Throwable) {
-                callback(CustomResult.Error(t))
+            .doOnError { throwable ->
+                Timber.tag(tag).e(throwable)
             }
-        })
     }
 }

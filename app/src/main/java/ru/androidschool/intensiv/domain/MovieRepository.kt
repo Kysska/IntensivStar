@@ -1,9 +1,8 @@
 package ru.androidschool.intensiv.domain
 
-import ru.androidschool.intensiv.data.network.util.CustomResult
+import io.reactivex.Single
 import ru.androidschool.intensiv.domain.entity.MovieCard
 
 interface MovieRepository {
-
-    fun getMovies(callback: (CustomResult<List<MovieCard>>) -> Unit)
+    fun getMovies(): Single<List<MovieCard>>
 }

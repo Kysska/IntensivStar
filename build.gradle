@@ -60,4 +60,8 @@ ext {
     gsonConverterVersion = "2.9.0"
     okhttpVersion = "4.10.0"
     okhttpLoggingVersion = "4.10.0"
+
+    rxAndroidVersion = "2.1.1"
+    rxJavaVersion = "2.2.16"
+    rxJavaAdapter = "2.9.0"
 }

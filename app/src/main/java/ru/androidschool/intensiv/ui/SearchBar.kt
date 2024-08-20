@@ -6,9 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import androidx.core.view.isVisible
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.SearchToolbarBinding
 import ru.androidschool.intensiv.utils.extensions.afterTextChanged
+import java.util.concurrent.TimeUnit
 
 class SearchBar @JvmOverloads constructor(
     context: Context,
@@ -17,9 +21,18 @@ class SearchBar @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyle) {
 
     lateinit var binding: SearchToolbarBinding
-
     private var hint: String = ""
     private var isCancelVisible: Boolean = true
+
+    val onTextChangedObservable by lazy {
+        Observable.create { emitter ->
+            binding.searchEditText.afterTextChanged { text ->
+                if (!emitter.isDisposed) {
+                    emitter.onNext(text.toString())
+                }
+            }
+        }
+    }
 
     init {
         if (attrs != null) {
@@ -58,5 +71,19 @@ class SearchBar @JvmOverloads constructor(
                 binding.deleteTextButton.visibility = View.GONE
             }
         }
+    }
+
+    fun observeSearchTextWithFilter(): Observable<String> {
+        return onTextChangedObservable
+            .debounce(500, TimeUnit.MILLISECONDS)
+            .map { it.trim() }
+            .filter { it.length > MIN_LENGTH }
+            .distinctUntilChanged()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    companion object {
+        const val MIN_LENGTH = 3
     }
 }

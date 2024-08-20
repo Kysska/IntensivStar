@@ -1,18 +1,24 @@
 package ru.androidschool.intensiv.data.repository
 
+import io.reactivex.Single
 import ru.androidschool.intensiv.data.network.MovieApiInterface
 import ru.androidschool.intensiv.data.network.mapper.MovieDetailMapper
-import ru.androidschool.intensiv.data.network.util.CustomResult
 import ru.androidschool.intensiv.domain.MovieDetailRepository
 import ru.androidschool.intensiv.domain.entity.MovieDetail
 
-class MovieDetailRepositoryImpl(private val movieApiInterface: MovieApiInterface) : BaseRepository(), MovieDetailRepository {
+class MovieDetailRepositoryImpl(private val movieApiInterface: MovieApiInterface) :
+    BaseRepository<MovieDetail>(), MovieDetailRepository {
 
-    override fun getMovieDetail(id: Int, callback: (CustomResult<MovieDetail>) -> Unit) {
-        handleResponse(
-            call = movieApiInterface.getMovieDetailById(id),
+    override fun getMovieDetail(id: Int): Single<MovieDetail> {
+        return fetchData(
+            apiCall = { movieApiInterface.getMovieDetailById(id) },
             mapper = { response -> MovieDetailMapper.toViewObject(response) },
-            callback = callback
+            emptyResult = MovieDetail(),
+            tag = REPOSITORY_TAG
         )
+    }
+
+    companion object {
+        const val REPOSITORY_TAG = "MovieDetail"
     }
 }
