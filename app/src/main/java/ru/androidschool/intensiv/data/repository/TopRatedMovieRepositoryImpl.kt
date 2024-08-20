@@ -6,14 +6,19 @@ import ru.androidschool.intensiv.data.network.mapper.MovieCardMapper
 import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 
-class TopRatedMovieRepositoryImpl(private val movieApiInterface: MovieApiInterface)
-    : BaseRepository<List<MovieCard>>(), MovieRepository {
+class TopRatedMovieRepositoryImpl(private val movieApiInterface: MovieApiInterface) :
+    BaseRepository<List<MovieCard>>(), MovieRepository {
 
     override fun getMovies(): Single<List<MovieCard>> {
         return fetchData(
             apiCall = { movieApiInterface.getTopRatedMovies() },
             mapper = { response -> MovieCardMapper.toViewObject(response.results ?: emptyList()) },
-            emptyResult = emptyList()
+            emptyResult = emptyList(),
+            tag = REPOSITORY_TAG
         )
+    }
+
+    companion object {
+        const val REPOSITORY_TAG = "TopRatedMovieRepository"
     }
 }

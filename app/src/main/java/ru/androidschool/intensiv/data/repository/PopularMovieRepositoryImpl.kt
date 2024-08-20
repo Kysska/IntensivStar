@@ -13,7 +13,12 @@ class PopularMovieRepositoryImpl(private val movieApiInterface: MovieApiInterfac
         return fetchData(
             apiCall = { movieApiInterface.getPopularMovies() },
             mapper = { response -> MovieCardMapper.toViewObject(response.results ?: emptyList()) },
-            emptyResult = emptyList()
+            emptyResult = emptyList(),
+            tag = REPOSITORY_TAG
         )
+    }
+
+    companion object {
+        const val REPOSITORY_TAG = "PopularMovieRepository"
     }
 }

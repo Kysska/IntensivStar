@@ -12,7 +12,12 @@ class CastRepositoryImpl(private val movieApiInterface: MovieApiInterface) : Bas
         return fetchData(
             apiCall = { movieApiInterface.getCastsListById(id) },
             mapper = { response -> CastCardMapper.toViewObject(response.castsList ?: emptyList()) },
-            emptyResult = emptyList()
+            emptyResult = emptyList(),
+            tag = REPOSITORY_TAG
         )
+    }
+
+    companion object {
+        const val REPOSITORY_TAG = "CastRepository"
     }
 }

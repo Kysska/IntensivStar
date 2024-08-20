@@ -13,7 +13,12 @@ class MovieDetailRepositoryImpl(private val movieApiInterface: MovieApiInterface
         return fetchData(
             apiCall = { movieApiInterface.getMovieDetailById(id) },
             mapper = { response -> MovieDetailMapper.toViewObject(response) },
-            emptyResult = MovieDetail()
+            emptyResult = MovieDetail(),
+            tag = REPOSITORY_TAG
         )
+    }
+
+    companion object {
+        const val REPOSITORY_TAG = "MovieDetail"
     }
 }

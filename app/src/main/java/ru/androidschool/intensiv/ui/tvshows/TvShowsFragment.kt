@@ -4,31 +4,24 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
-import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.data.network.MovieApiClient
 import ru.androidschool.intensiv.data.repository.TvShowRepositoryImpl
 import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
 import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.ui.BaseFragment
+import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
 
-class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
+class TvShowsFragment : BaseFragment() {
 
     private var _binding: TvShowsFragmentBinding? = null
     private val binding get() = _binding!!
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
-    }
-
-    private val compositeDisposable by lazy {
-        CompositeDisposable()
     }
 
     private val tvShowRepositoryImpl: MovieRepository by lazy {
@@ -53,8 +46,7 @@ class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
     private fun loadNowPlayingMovies() {
         compositeDisposable.add(
             tvShowRepositoryImpl.getMovies()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .applySchedulers()
                 .subscribe({ movies ->
                     updateTvShowList(movies)
                 }, { error ->
@@ -74,10 +66,5 @@ class TvShowsFragment : Fragment(R.layout.tv_shows_fragment) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        compositeDisposable.clear()
     }
 }

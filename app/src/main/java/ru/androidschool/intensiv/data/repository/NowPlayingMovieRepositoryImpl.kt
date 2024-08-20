@@ -13,7 +13,12 @@ class NowPlayingMovieRepositoryImpl(private val movieApiInterface: MovieApiInter
         return fetchData(
             apiCall = { movieApiInterface.getNowPlayingMovies() },
             mapper = { response -> MovieCardMapper.toViewObject(response.results ?: emptyList()) },
-            emptyResult = emptyList()
+            emptyResult = emptyList(),
+            tag = REPOSITORY_TAG
         )
+    }
+
+    companion object {
+        const val REPOSITORY_TAG = "NowPlayingRepository"
     }
 }

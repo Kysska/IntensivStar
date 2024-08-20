@@ -63,4 +63,5 @@ ext {
 
     rxAndroidVersion = "2.1.1"
     rxJavaVersion = "2.2.16"
+    rxJavaAdapter = "2.9.0"
 }

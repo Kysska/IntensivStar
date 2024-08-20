@@ -2,14 +2,10 @@ package ru.androidschool.intensiv.ui.feed
 
 import android.os.Bundle
 import android.view.*
-import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.data.network.MovieApiClient
 import ru.androidschool.intensiv.data.repository.NowPlayingMovieRepositoryImpl
@@ -19,10 +15,12 @@ import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.utils.MovieType
+import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
 
-class FeedFragment : Fragment(R.layout.feed_fragment) {
+class FeedFragment : BaseFragment() {
 
     private var _binding: FeedFragmentBinding? = null
     private var _searchBinding: FeedHeaderBinding? = null
@@ -31,10 +29,6 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
     // onDestroyView.
     private val binding get() = _binding!!
     private val searchBinding get() = _searchBinding!!
-
-    private val compositeDisposable by lazy {
-        CompositeDisposable()
-    }
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
@@ -86,8 +80,7 @@ class FeedFragment : Fragment(R.layout.feed_fragment) {
     private fun loadMovies(movieType: MovieType, repository: MovieRepository) {
         compositeDisposable.add(
             repository.getMovies()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .applySchedulers()
                 .subscribe({ movies ->
                     updateMovieCardList(movies, movieType)
                 }, { error ->
