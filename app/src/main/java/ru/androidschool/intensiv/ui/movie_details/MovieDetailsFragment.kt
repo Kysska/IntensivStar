@@ -17,6 +17,7 @@ import ru.androidschool.intensiv.domain.entity.CastCard
 import ru.androidschool.intensiv.domain.entity.MovieDetail
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.ui.feed.FeedFragment
+import ru.androidschool.intensiv.utils.extensions.applyLoader
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
 
@@ -63,6 +64,7 @@ class MovieDetailsFragment : BaseFragment() {
         compositeDisposable.add(
             movieDetailRepositoryImpl.getMovieDetail(id)
                 .applySchedulers()
+                .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ movie ->
                     updateMovieDetailUi(movie)
                 }, { error ->

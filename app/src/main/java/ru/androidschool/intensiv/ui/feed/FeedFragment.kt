@@ -6,6 +6,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import io.reactivex.Single
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.data.network.MovieApiClient
 import ru.androidschool.intensiv.data.repository.NowPlayingMovieRepositoryImpl
@@ -17,6 +18,7 @@ import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.utils.MovieType
+import ru.androidschool.intensiv.utils.extensions.applyLoader
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
 
@@ -72,19 +74,34 @@ class FeedFragment : BaseFragment() {
 
         binding.moviesRecyclerView.adapter = adapter
 
-        loadMovies(MovieType.NOW_PLAYING, nowPlayingMovieRepositoryImpl)
-        loadMovies(MovieType.POPULAR, popularMovieRepositoryImpl)
-        loadMovies(MovieType.UPCOMING, upcomingMovieRepositoryImpl)
+        loadMovies()
     }
 
-    private fun loadMovies(movieType: MovieType, repository: MovieRepository) {
+    private fun loadMovies() {
+        val nowPlayingMovies = nowPlayingMovieRepositoryImpl.getMovies()
+        val popularMovies = popularMovieRepositoryImpl.getMovies()
+        val upcomingMovies = upcomingMovieRepositoryImpl.getMovies()
+
         compositeDisposable.add(
-            repository.getMovies()
+            Single.zip(
+                nowPlayingMovies,
+                popularMovies,
+                upcomingMovies
+            ) { nowPlaying, popular, upcoming ->
+                mapOf(
+                    MovieType.NOW_PLAYING to nowPlaying,
+                    MovieType.POPULAR to popular,
+                    MovieType.UPCOMING to upcoming
+                )
+            }
                 .applySchedulers()
-                .subscribe({ movies ->
-                    updateMovieCardList(movies, movieType)
+                .applyLoader(binding.progressBarContainer.progressBar)
+                .subscribe({ moviesMap ->
+                    moviesMap.forEach { (movieType, movies) ->
+                        updateMovieCardList(movies, movieType)
+                    }
                 }, { error ->
-                    Timber.e(error, "Error loading movies $movieType")
+                    Timber.e(error, "Error loading movies")
                 })
         )
     }

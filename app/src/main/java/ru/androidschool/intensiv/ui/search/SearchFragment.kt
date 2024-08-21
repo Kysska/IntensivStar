@@ -4,13 +4,27 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.GridLayoutManager
+import com.xwray.groupie.GroupAdapter
+import com.xwray.groupie.GroupieViewHolder
 import ru.androidschool.intensiv.R
+import ru.androidschool.intensiv.data.network.MovieApiClient
+import ru.androidschool.intensiv.data.repository.SearchRepositoryImpl
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.databinding.FragmentSearchBinding
+import ru.androidschool.intensiv.domain.SearchRepository
+import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.ui.BaseFragment
+import ru.androidschool.intensiv.ui.common.OnBackButtonClickListener
+import ru.androidschool.intensiv.ui.feed.FeedFragment.Companion.KEY_ID
 import ru.androidschool.intensiv.ui.feed.FeedFragment.Companion.KEY_SEARCH
+import ru.androidschool.intensiv.ui.feed.MovieItem
+import ru.androidschool.intensiv.utils.extensions.applyLoader
+import ru.androidschool.intensiv.utils.extensions.applySchedulers
+import timber.log.Timber
 
-class SearchFragment : Fragment(R.layout.fragment_search) {
+class SearchFragment : BaseFragment(), OnBackButtonClickListener {
 
     private var _binding: FragmentSearchBinding? = null
     private var _searchBinding: FeedHeaderBinding? = null
@@ -20,6 +34,14 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private val binding get() = _binding!!
     private val searchBinding get() = _searchBinding!!
 
+    private val searchRepository: SearchRepository by lazy {
+        SearchRepositoryImpl(MovieApiClient.apiClient)
+    }
+
+    private val adapter by lazy {
+        GroupAdapter<GroupieViewHolder>()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -27,13 +49,59 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     ): View {
         _binding = FragmentSearchBinding.inflate(inflater, container, false)
         _searchBinding = FeedHeaderBinding.bind(binding.root)
+
+        searchBinding.searchToolbar.setOnClearButtonClickListener(this)
+
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val searchTerm = requireArguments().getString(KEY_SEARCH)
+        val searchTerm = getKeySearch() ?: ""
         searchBinding.searchToolbar.setText(searchTerm)
+
+        binding.moviesRecyclerView.layoutManager = GridLayoutManager(context, 3)
+        binding.moviesRecyclerView.adapter = adapter
+
+        if (searchTerm.isNotEmpty()) {
+            resultSearch(searchTerm)
+        }
+    }
+
+    private fun getKeySearch(): String? {
+        return requireArguments().getString(KEY_SEARCH)
+    }
+
+    private fun resultSearch(query: String) {
+        compositeDisposable.add(
+            searchRepository.getSearchMovie(query)
+                .applySchedulers()
+                .applyLoader(binding.progressBarContainer.progressBar)
+                .subscribe({ movies ->
+                    displaySearchResults(movies)
+                }, { error ->
+                    Timber.e(error, "Error searching movies")
+                })
+        )
+    }
+
+    private fun displaySearchResults(movies: List<MovieCard>) {
+        val movieItems = movies.map { movie ->
+            MovieItem(movie) {
+                openMovieDetails(it)
+            }
+        }
+        adapter.update(movieItems)
+    }
+
+    private fun openMovieDetails(movie: MovieCard) {
+        val bundle = Bundle()
+        bundle.putInt(KEY_ID, movie.id)
+        findNavController().navigate(R.id.movie_details_fragment, bundle)
+    }
+
+    override fun onClearButtonClicked() {
+        findNavController().popBackStack()
     }
 
     override fun onDestroyView() {

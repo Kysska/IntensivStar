@@ -12,6 +12,7 @@ import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
 import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.BaseFragment
+import ru.androidschool.intensiv.utils.extensions.applyLoader
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
 
@@ -47,6 +48,7 @@ class TvShowsFragment : BaseFragment() {
         compositeDisposable.add(
             tvShowRepositoryImpl.getMovies()
                 .applySchedulers()
+                .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ movies ->
                     updateTvShowList(movies)
                 }, { error ->
