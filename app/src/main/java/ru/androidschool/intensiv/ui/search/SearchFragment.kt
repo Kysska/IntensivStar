@@ -60,7 +60,7 @@ class SearchFragment : BaseFragment(), OnBackButtonClickListener {
         val searchTerm = getKeySearch() ?: ""
         searchBinding.searchToolbar.setText(searchTerm)
 
-        binding.moviesRecyclerView.layoutManager = GridLayoutManager(context, 3)
+        binding.moviesRecyclerView.layoutManager = GridLayoutManager(context, GRID_SPAN_COUNT)
         binding.moviesRecyclerView.adapter = adapter
 
         if (searchTerm.isNotEmpty()) {
@@ -108,5 +108,9 @@ class SearchFragment : BaseFragment(), OnBackButtonClickListener {
         super.onDestroyView()
         _binding = null
         _searchBinding = null
+    }
+
+    companion object {
+        private const val GRID_SPAN_COUNT = 3
     }
 }
