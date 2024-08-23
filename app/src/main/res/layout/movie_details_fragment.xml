@@ -48,6 +48,10 @@
             android:orientation="vertical"
             android:padding="@dimen/material_padding_normal">
 
+            <include
+                android:id="@+id/progressBarContainer"
+                layout="@layout/progress_bar" />
+
             <TextView
                 android:id="@+id/movieTitleTextView"
                 style="@style/LargeTitleCustomStyle"

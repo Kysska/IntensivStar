@@ -9,8 +9,10 @@ import androidx.core.view.isVisible
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.SearchToolbarBinding
+import ru.androidschool.intensiv.ui.common.OnBackButtonClickListener
 import ru.androidschool.intensiv.utils.extensions.afterTextChanged
 import java.util.concurrent.TimeUnit
 
@@ -23,15 +25,10 @@ class SearchBar @JvmOverloads constructor(
     lateinit var binding: SearchToolbarBinding
     private var hint: String = ""
     private var isCancelVisible: Boolean = true
+    private var clearButtonClickListener: OnBackButtonClickListener? = null
 
-    val onTextChangedObservable by lazy {
-        Observable.create { emitter ->
-            binding.searchEditText.afterTextChanged { text ->
-                if (!emitter.isDisposed) {
-                    emitter.onNext(text.toString())
-                }
-            }
-        }
+    private val searchSubject: PublishSubject<String> by lazy {
+        PublishSubject.create()
     }
 
     init {
@@ -52,18 +49,24 @@ class SearchBar @JvmOverloads constructor(
         binding.searchEditText.setText("")
     }
 
+    private fun clearBackButton() {
+        clear()
+        clearButtonClickListener?.onClearButtonClicked()
+    }
+
     override fun onFinishInflate() {
         super.onFinishInflate()
         binding = SearchToolbarBinding.inflate(LayoutInflater.from(context), this, true)
         binding.searchEditText.hint = hint
         binding.deleteTextButton.setOnClickListener {
-            binding.searchEditText.text.clear()
+            clearBackButton()
         }
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         binding.searchEditText.afterTextChanged { text ->
+            searchSubject.onNext(text.toString())
             if (!text.isNullOrEmpty() && !binding.deleteTextButton.isVisible) {
                 binding.deleteTextButton.visibility = View.VISIBLE
             }
@@ -74,13 +77,17 @@ class SearchBar @JvmOverloads constructor(
     }
 
     fun observeSearchTextWithFilter(): Observable<String> {
-        return onTextChangedObservable
+        return searchSubject
             .debounce(500, TimeUnit.MILLISECONDS)
             .map { it.trim() }
             .filter { it.length > MIN_LENGTH }
             .distinctUntilChanged()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    fun setOnClearButtonClickListener(listener: OnBackButtonClickListener) {
+        clearButtonClickListener = listener
     }
 
     companion object {

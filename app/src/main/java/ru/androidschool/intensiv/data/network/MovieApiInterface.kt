@@ -50,4 +50,10 @@ interface MovieApiInterface {
         @Path("id") id: Int,
         @Query("language") language: String = defaultLanguage
     ): Single<CreditResponse>
+
+    @GET("search/movie")
+    fun searchMovieByTitle(
+        @Query("query") query: String,
+        @Query("language") language: String = defaultLanguage
+    ): Single<MovieListResponse>
 }
