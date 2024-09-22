@@ -7,18 +7,15 @@ import android.view.ViewGroup
 import com.squareup.picasso.Picasso
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import ru.androidschool.intensiv.data.network.MovieApiClient
-import ru.androidschool.intensiv.data.repository.CastRepositoryImpl
-import ru.androidschool.intensiv.data.repository.MovieDetailRepositoryImpl
+import io.reactivex.Single
 import ru.androidschool.intensiv.databinding.MovieDetailsFragmentBinding
-import ru.androidschool.intensiv.domain.CastRepository
-import ru.androidschool.intensiv.domain.MovieDetailRepository
 import ru.androidschool.intensiv.domain.entity.CastCard
 import ru.androidschool.intensiv.domain.entity.MovieDetail
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.ui.feed.FeedFragment
 import ru.androidschool.intensiv.utils.extensions.applyLoader
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
+import ru.androidschool.intensiv.utils.extensions.loadImage
 import timber.log.Timber
 
 class MovieDetailsFragment : BaseFragment() {
@@ -28,14 +25,6 @@ class MovieDetailsFragment : BaseFragment() {
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
-    }
-
-    private val movieDetailRepositoryImpl: MovieDetailRepository by lazy {
-        MovieDetailRepositoryImpl(MovieApiClient.apiClient)
-    }
-
-    private val castRepositoryImpl: CastRepository by lazy {
-        CastRepositoryImpl(MovieApiClient.apiClient)
     }
 
     override fun onCreateView(
@@ -52,23 +41,49 @@ class MovieDetailsFragment : BaseFragment() {
 
         val movieId = getMovieId()
 
-        loadMovieDetailData(movieId)
-        loadCastList(movieId)
+        fetchMovieWithCastFromNetwork(movieId)
     }
 
     private fun getMovieId(): Int {
         return requireArguments().getInt(FeedFragment.KEY_ID)
     }
 
-    private fun loadMovieDetailData(id: Int) {
+    private fun fetchMovieWithCastFromNetwork(id: Int) {
         compositeDisposable.add(
-            movieDetailRepositoryImpl.getMovieDetail(id)
+            movieWithCastRepositoryImpl.getMovieWithCastFromNetwork(id)
+                .flatMap { movieWithCast ->
+                    movieWithCastRepositoryImpl.saveMovieWithCast(movieWithCast)
+                        .andThen(Single.just(movieWithCast))
+                }
+                .onErrorResumeNext { error ->
+                    Timber.e(error, "Error movie from network")
+                    movieWithCastRepositoryImpl.getMovieWithCastFromLocal(id)
+                }
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
-                .subscribe({ movie ->
-                    updateMovieDetailUi(movie)
+                .subscribe({ movieWithCast ->
+                    updateMovieDetailUi(movieWithCast.movie)
+                    updateCastListUI(movieWithCast.cast)
+
+                    checkFavoriteStatus(movieWithCast.movie.id)
+                }, { networkError ->
+                    Timber.e(networkError, "Error loading movie detail from network")
+                })
+        )
+    }
+
+    private fun checkFavoriteStatus(movieId: Int) {
+        compositeDisposable.add(
+            favoriteMovieRepository.getIsMovieFavorite(movieId)
+                .applySchedulers()
+                .applyLoader(binding.progressBarContainer.progressBar)
+                .subscribe({ isFavorite ->
+                    onFavoriteCheckboxChanged(movieId, isFavorite)
                 }, { error ->
-                    Timber.e(error, "Error loading movie detail")
+                    Timber.e(error, "Error favorite status")
+                }, {
+                    Timber.tag("favStatus").d("No favorite")
+                    onFavoriteCheckboxChanged(movieId, DEFAULT_CHECKBOX_VALUE)
                 })
         )
     }
@@ -82,22 +97,8 @@ class MovieDetailsFragment : BaseFragment() {
             textViewGenre.text = movie.genres.joinToString(", ")
             textViewYear.text = movie.releaseDate
 
-            Picasso.get()
-                .load(movie.posterPath)
-                .into(moviePosterImageView)
+            moviePosterImageView.loadImage(movie.posterPath)
         }
-    }
-
-    private fun loadCastList(id: Int) {
-        compositeDisposable.add(
-            castRepositoryImpl.getCasts(id)
-                .applySchedulers()
-                .subscribe({ casts ->
-                    updateCastListUI(casts)
-                }, { error ->
-                    Timber.e(error, "Error loading casts")
-                })
-        )
     }
 
     private fun updateCastListUI(castList: List<CastCard>) {
@@ -107,8 +108,42 @@ class MovieDetailsFragment : BaseFragment() {
         binding.recyclerView.adapter = adapter.apply { addAll(castListItem) }
     }
 
+    private fun onFavoriteCheckboxChanged(movieId: Int, isFavorite: Boolean) {
+        binding.favoriteCheckBox.isChecked = isFavorite
+
+        binding.favoriteCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                compositeDisposable.add(
+                    favoriteMovieRepository.setIsMovieFavorite(movieId, isChecked)
+                        .applySchedulers()
+                        .subscribe({
+                            Timber.d("Saved to fav")
+                        }, { error ->
+                            Timber.e(error, "Failed to save movie")
+                            binding.favoriteCheckBox.isChecked = false
+                        })
+                )
+            } else {
+                compositeDisposable.add(
+                    favoriteMovieRepository.setIsMovieFavorite(movieId, isChecked)
+                        .applySchedulers()
+                        .subscribe({
+                            Timber.d("Delete fav")
+                        }, { error ->
+                            Timber.e(error, "Failed to save movie")
+                            binding.favoriteCheckBox.isChecked = true
+                        })
+                )
+            }
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    companion object {
+        private const val DEFAULT_CHECKBOX_VALUE = false
     }
 }

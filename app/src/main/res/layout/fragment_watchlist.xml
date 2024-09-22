@@ -6,6 +6,10 @@
     android:layout_height="match_parent"
     tools:context=".ui.watchlist.WatchlistFragment">
 
+    <include
+        android:id="@+id/progressBarContainer"
+        layout="@layout/progress_bar" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/movies_recycler_view"
         android:layout_width="match_parent"

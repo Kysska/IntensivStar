@@ -9,11 +9,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import ru.androidschool.intensiv.R
-import ru.androidschool.intensiv.data.network.MovieApiClient
-import ru.androidschool.intensiv.data.repository.SearchRepositoryImpl
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.databinding.FragmentSearchBinding
-import ru.androidschool.intensiv.domain.SearchRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.ui.common.OnBackButtonClickListener
@@ -33,10 +30,6 @@ class SearchFragment : BaseFragment(), OnBackButtonClickListener {
     // onDestroyView.
     private val binding get() = _binding!!
     private val searchBinding get() = _searchBinding!!
-
-    private val searchRepository: SearchRepository by lazy {
-        SearchRepositoryImpl(MovieApiClient.apiClient)
-    }
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()

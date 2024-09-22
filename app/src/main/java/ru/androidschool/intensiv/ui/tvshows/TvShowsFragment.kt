@@ -6,10 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import ru.androidschool.intensiv.data.network.MovieApiClient
-import ru.androidschool.intensiv.data.repository.TvShowRepositoryImpl
+import io.reactivex.Single
 import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
-import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.utils.extensions.applyLoader
@@ -25,10 +23,6 @@ class TvShowsFragment : BaseFragment() {
         GroupAdapter<GroupieViewHolder>()
     }
 
-    private val tvShowRepositoryImpl: MovieRepository by lazy {
-        TvShowRepositoryImpl(MovieApiClient.apiClient)
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -41,12 +35,24 @@ class TvShowsFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        loadNowPlayingMovies()
+        binding.tvshowRecyclerView.adapter = adapter
+
+        loadTvShowsMovieFromNetwork()
     }
 
-    private fun loadNowPlayingMovies() {
+    private fun loadTvShowsMovieFromNetwork() {
         compositeDisposable.add(
-            tvShowRepositoryImpl.getMovies()
+            tvShowRepositoryImpl.getMoviesFromNetwork()
+                .flatMap { tvShows ->
+                    tvShows.map { tvShow ->
+                        tvShowRepositoryImpl.saveMovie(tvShow)
+                    }
+                    Single.just(tvShows)
+                }
+                .onErrorResumeNext { error ->
+                    Timber.e(error, "Error loading tv shows from network")
+                    tvShowRepositoryImpl.getMoviesFromLocalByCategory()
+                }
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ movies ->
@@ -62,7 +68,7 @@ class TvShowsFragment : BaseFragment() {
             TvShowsItem(it) {}
         }.toList()
 
-        binding.tvshowRecyclerView.adapter = adapter.apply { addAll(tvShowListItem) }
+        adapter.apply { addAll(tvShowListItem) }
     }
 
     override fun onDestroyView() {
