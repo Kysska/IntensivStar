@@ -26,6 +26,7 @@ abstract class MovieDatabase : RoomDatabase() {
     abstract fun favoriteStatusDao(): FavoriteStatusDao
 
     companion object {
+        private const val DATABASE_NAME = "FavoriteMovieDatabase"
         private lateinit var INSTANCE: MovieDatabase
 
         @Synchronized
@@ -34,7 +35,7 @@ abstract class MovieDatabase : RoomDatabase() {
                 INSTANCE = Room.databaseBuilder(
                     context.applicationContext,
                     MovieDatabase::class.java,
-                    "FavoriteMovieDatabase"
+                    DATABASE_NAME
                 )
                     .build()
             }
