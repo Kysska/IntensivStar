@@ -19,7 +19,6 @@ import ru.androidschool.intensiv.domain.MovieDetailRepository
 import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.MovieWithCastRepository
 import ru.androidschool.intensiv.domain.SearchRepository
-import timber.log.Timber
 
 abstract class BaseFragment : Fragment() {
 

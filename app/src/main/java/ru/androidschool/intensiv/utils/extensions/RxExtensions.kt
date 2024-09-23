@@ -51,8 +51,10 @@ fun <T> Single<T>.applyLoader(
 fun <T> Observable<T>.applyLoader(
     view: View
 ): Observable<T> {
-    return this.doOnSubscribe { view.visibility = View.VISIBLE }
-        .doFinally { view.visibility = View.GONE }
+    return this.doOnSubscribe {
+        view.visibility = View.VISIBLE
+    }
+        .doOnNext { view.visibility = View.GONE }
 }
 
 fun <T> Maybe<T>.applyLoader(

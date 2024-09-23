@@ -8,7 +8,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import io.reactivex.Observable
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FragmentWatchlistBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
@@ -54,13 +53,6 @@ class WatchlistFragment : BaseFragment() {
             favoriteMovieRepository.getAllFavoriteMovieList()
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
-                .switchMap { data ->
-                    if (data.isEmpty()) {
-                        Observable.empty<List<MovieCard>>().doOnComplete { binding.progressBarContainer.progressBar.visibility = View.GONE }
-                    } else {
-                        Observable.just(data)
-                    }
-                }
                 .subscribe({ movieList ->
                     updateFavoriteMovieUi(movieList)
                 }, { error ->
