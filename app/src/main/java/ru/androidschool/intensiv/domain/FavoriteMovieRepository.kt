@@ -1,15 +1,9 @@
 package ru.androidschool.intensiv.domain
 
-import io.reactivex.Completable
-import io.reactivex.Maybe
 import io.reactivex.Observable
-import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.domain.entity.MovieWithCast
 
 interface FavoriteMovieRepository {
 
-    fun getAllFavoriteMovieList(): Observable<List<MovieCard>>
-
-    fun getIsMovieFavorite(movieId: Int): Maybe<Boolean>
-
-    fun setIsMovieFavorite(movieId: Int, isFavorite: Boolean): Completable
+    fun getAllFavoriteMovieList(): Observable<List<MovieWithCast>>
 }

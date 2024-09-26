@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import io.reactivex.Completable
+import io.reactivex.Observable
 import io.reactivex.Single
 import ru.androidschool.intensiv.data.local.dto.CastDbEntity
 import ru.androidschool.intensiv.data.local.dto.MovieCastCrossRef
@@ -28,11 +29,17 @@ interface MovieDetailDao {
     @Delete
     fun deleteMovie(movie: MovieDbEntity): Completable
 
+    @Delete
+    fun deleteMovieCastCrossRef(crossRef: MovieCastCrossRef): Completable
+
     @Transaction
     @Query("SELECT * FROM movies")
-    fun getAllMoviesWithCast(): Single<List<MovieWithCastDb>>
+    fun getAllFavoriteMoviesWithCast(): Observable<List<MovieWithCastDb>>
 
     @Transaction
     @Query("SELECT * FROM movies WHERE movie_id = :movieId")
     fun getMovieWithCast(movieId: Int): Single<MovieWithCastDb>
+
+    @Query("SELECT 1 FROM movies WHERE movie_id = :id")
+    fun isMovieExists(id: Int): Single<Boolean>
 }

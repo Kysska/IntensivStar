@@ -8,8 +8,8 @@ data class MovieWithCastDb(
     @Embedded
     val movie: MovieDbEntity,
     @Relation(
-        parentColumn = "movie_id",
-        entityColumn = "cast_id",
+        parentColumn = DatabaseConst.MovieCastCrossRef.COLUMN_MOVIE_ID,
+        entityColumn = DatabaseConst.MovieCastCrossRef.COLUMN_CAST_ID,
         associateBy = Junction(MovieCastCrossRef::class)
     )
     val cast: List<CastDbEntity>

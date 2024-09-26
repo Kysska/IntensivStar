@@ -6,10 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import io.reactivex.Single
 import ru.androidschool.intensiv.databinding.MovieDetailsFragmentBinding
 import ru.androidschool.intensiv.domain.entity.CastCard
 import ru.androidschool.intensiv.domain.entity.MovieDetail
+import ru.androidschool.intensiv.domain.entity.MovieWithCast
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.ui.feed.FeedFragment
 import ru.androidschool.intensiv.utils.extensions.applyLoader
@@ -50,10 +50,6 @@ class MovieDetailsFragment : BaseFragment() {
     private fun fetchMovieWithCastFromNetwork(id: Int) {
         compositeDisposable.add(
             movieWithCastRepositoryImpl.getMovieWithCastFromNetwork(id)
-                .flatMap { movieWithCast ->
-                    movieWithCastRepositoryImpl.saveMovieWithCast(movieWithCast)
-                        .andThen(Single.just(movieWithCast))
-                }
                 .onErrorResumeNext { error ->
                     Timber.e(error, "Error movie from network")
                     movieWithCastRepositoryImpl.getMovieWithCastFromLocal(id)
@@ -64,25 +60,23 @@ class MovieDetailsFragment : BaseFragment() {
                     updateMovieDetailUi(movieWithCast.movie)
                     updateCastListUI(movieWithCast.cast)
 
-                    checkFavoriteStatus(movieWithCast.movie.id)
+                    checkFavoriteStatus(movieWithCast)
                 }, { networkError ->
                     Timber.e(networkError, "Error loading movie detail from network")
                 })
         )
     }
 
-    private fun checkFavoriteStatus(movieId: Int) {
+    private fun checkFavoriteStatus(movieWithCast: MovieWithCast) {
         compositeDisposable.add(
-            favoriteMovieRepository.getIsMovieFavorite(movieId)
+            movieWithCastRepositoryImpl.isMovieExists(movieWithCast.movie.id)
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ isFavorite ->
-                    onFavoriteCheckboxChanged(movieId, isFavorite)
+                    onFavoriteCheckboxChanged(movieWithCast, true)
                 }, { error ->
-                    Timber.e(error, "Error favorite status")
-                }, {
-                    Timber.tag("favStatus").d("No favorite")
-                    onFavoriteCheckboxChanged(movieId, DEFAULT_CHECKBOX_VALUE)
+                    Timber.e(error, "Error checking favorite status")
+                    onFavoriteCheckboxChanged(movieWithCast, false)
                 })
         )
     }
@@ -107,13 +101,13 @@ class MovieDetailsFragment : BaseFragment() {
         binding.recyclerView.adapter = adapter.apply { addAll(castListItem) }
     }
 
-    private fun onFavoriteCheckboxChanged(movieId: Int, isFavorite: Boolean) {
+    private fun onFavoriteCheckboxChanged(movieWithCast: MovieWithCast, isFavorite: Boolean) {
         binding.favoriteCheckBox.isChecked = isFavorite
 
         binding.favoriteCheckBox.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 compositeDisposable.add(
-                    favoriteMovieRepository.setIsMovieFavorite(movieId, isChecked)
+                    movieWithCastRepositoryImpl.saveMovieWithCast(movieWithCast)
                         .applySchedulers()
                         .subscribe({
                             Timber.d("Saved to fav")
@@ -124,7 +118,7 @@ class MovieDetailsFragment : BaseFragment() {
                 )
             } else {
                 compositeDisposable.add(
-                    favoriteMovieRepository.setIsMovieFavorite(movieId, isChecked)
+                    movieWithCastRepositoryImpl.deleteMovieWithCast(movieWithCast)
                         .applySchedulers()
                         .subscribe({
                             Timber.d("Delete fav")

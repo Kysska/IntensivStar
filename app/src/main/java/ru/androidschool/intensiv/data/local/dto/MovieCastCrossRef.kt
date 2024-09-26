@@ -4,12 +4,12 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 
 @Entity(
-    tableName = "movie_cast_cross_ref",
-    primaryKeys = ["movie_id", "cast_id"]
+    tableName = DatabaseConst.MovieCastCrossRef.TABLE_NAME,
+    primaryKeys = [DatabaseConst.MovieCastCrossRef.COLUMN_MOVIE_ID, DatabaseConst.MovieCastCrossRef.COLUMN_CAST_ID]
 )
 data class MovieCastCrossRef(
-    @ColumnInfo(name = "movie_id")
+    @ColumnInfo(name = DatabaseConst.MovieCastCrossRef.COLUMN_MOVIE_ID)
     val movieId: Int,
-    @ColumnInfo(name = "cast_id")
+    @ColumnInfo(name = DatabaseConst.MovieCastCrossRef.COLUMN_CAST_ID)
     val castId: Int
 )

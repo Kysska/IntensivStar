@@ -5,25 +5,22 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import ru.androidschool.intensiv.data.local.dao.FavoriteStatusDao
 import ru.androidschool.intensiv.data.local.dao.MovieCardDao
 import ru.androidschool.intensiv.data.local.dao.MovieDetailDao
 import ru.androidschool.intensiv.data.local.dto.CastDbEntity
-import ru.androidschool.intensiv.data.local.dto.FavoriteStatus
 import ru.androidschool.intensiv.data.local.dto.MovieCardDbEntity
 import ru.androidschool.intensiv.data.local.dto.MovieCastCrossRef
 import ru.androidschool.intensiv.data.local.dto.MovieDbEntity
 
 @Database(
     version = 1,
-    entities = [MovieDbEntity::class, CastDbEntity::class, MovieCastCrossRef::class, MovieCardDbEntity::class, FavoriteStatus::class]
+    entities = [MovieDbEntity::class, CastDbEntity::class, MovieCastCrossRef::class, MovieCardDbEntity::class]
 )
 @TypeConverters(Converters::class)
 abstract class MovieDatabase : RoomDatabase() {
 
     abstract fun movieDetailDao(): MovieDetailDao
     abstract fun movieCardDao(): MovieCardDao
-    abstract fun favoriteStatusDao(): FavoriteStatusDao
 
     companion object {
         private const val DATABASE_NAME = "FavoriteMovieDatabase"

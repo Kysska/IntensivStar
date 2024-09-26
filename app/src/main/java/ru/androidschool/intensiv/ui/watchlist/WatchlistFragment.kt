@@ -10,7 +10,8 @@ import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FragmentWatchlistBinding
-import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.domain.entity.MovieDetail
+import ru.androidschool.intensiv.domain.entity.MovieWithCast
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.ui.feed.FeedFragment.Companion.KEY_ID
 import ru.androidschool.intensiv.utils.extensions.applyLoader
@@ -61,18 +62,18 @@ class WatchlistFragment : BaseFragment() {
         )
     }
 
-    private fun updateFavoriteMovieUi(movieList: List<MovieCard>) {
+    private fun updateFavoriteMovieUi(movieList: List<MovieWithCast>) {
         val moviesListItem =
             movieList.map {
                 MoviePreviewItem(
-                    it
-                ) { movie -> openMovieDetails(it) }
+                    it.movie
+                ) { movie -> openMovieDetails(it.movie) }
             }.toList()
 
         binding.moviesRecyclerView.adapter = adapter.apply { addAll(moviesListItem) }
     }
 
-    private fun openMovieDetails(movie: MovieCard) {
+    private fun openMovieDetails(movie: MovieDetail) {
         val bundle = Bundle()
         bundle.putInt(KEY_ID, movie.id)
         findNavController().navigate(R.id.movie_details_fragment, bundle)

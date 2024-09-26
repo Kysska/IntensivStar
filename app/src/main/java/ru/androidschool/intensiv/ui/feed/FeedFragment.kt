@@ -92,7 +92,6 @@ class FeedFragment : BaseFragment() {
         )
     }
 
-
     private fun loadMoviesFromLocal(): Single<Map<MovieType, List<MovieCard>>> {
         val nowPlayingLocal = nowPlayingMovieRepositoryImpl.getMoviesFromLocalByCategory()
         val popularLocal = popularMovieRepositoryImpl.getMoviesFromLocalByCategory()

@@ -1,4 +1,4 @@
-package ru.androidschool.intensiv.data.repository
+package ru.androidschool.intensiv.data.repository.base
 
 import io.reactivex.Completable
 import io.reactivex.Observable

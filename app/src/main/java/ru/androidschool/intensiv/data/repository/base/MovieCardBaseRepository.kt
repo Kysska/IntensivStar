@@ -1,4 +1,4 @@
-package ru.androidschool.intensiv.data.repository
+package ru.androidschool.intensiv.data.repository.base
 
 import io.reactivex.Completable
 import io.reactivex.Single
@@ -9,8 +9,12 @@ import ru.androidschool.intensiv.data.network.mapper.MovieCardNetworkMapper
 import ru.androidschool.intensiv.domain.entity.MovieCard
 
 abstract class MovieCardBaseRepository(
-    private val movieCardDao: MovieCardDao
+    private val movieCardDao: MovieCardDao,
+    private val databaseMapper: MovieCardDatabaseMapper,
+    private val networkMapper: MovieCardNetworkMapper
 ) : BaseRepository<List<MovieCard>>() {
+
+    abstract fun getCategoryName(): String
 
     protected fun fetchMoviesFromNetwork(
         apiCall: () -> Single<MovieListResponse>,
@@ -18,7 +22,7 @@ abstract class MovieCardBaseRepository(
     ): Single<List<MovieCard>> {
         return fetchData(
             call = apiCall,
-            mapper = { response -> MovieCardNetworkMapper.map(response.results ?: emptyList()) },
+            mapper = { response -> networkMapper.map(response.results ?: emptyList()) },
             emptyResult = emptyList(),
             tag = tag
         )
@@ -30,7 +34,7 @@ abstract class MovieCardBaseRepository(
     ): Single<List<MovieCard>> {
         return fetchData(
             call = { movieCardDao.getAllMoviesCardByCategory(category) },
-            mapper = { MovieCardDatabaseMapper.reverseMap(it) },
+            mapper = { databaseMapper.reverseMap(it) },
             emptyResult = emptyList(),
             tag = tag
         )
@@ -42,7 +46,7 @@ abstract class MovieCardBaseRepository(
         category: String
     ): Completable {
         return performDatabaseOperation(
-            daoOperation = { movieCardDao.insertMovie(MovieCardDatabaseMapper.mapByCategory(movieCard, category)) },
+            daoOperation = { movieCardDao.insertMovie(databaseMapper.mapByCategory(movieCard, category)) },
             operationType = "Insert",
             tag = tag
         )

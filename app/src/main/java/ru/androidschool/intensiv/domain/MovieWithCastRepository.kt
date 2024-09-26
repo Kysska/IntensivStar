@@ -13,4 +13,6 @@ interface MovieWithCastRepository {
     fun saveMovieWithCast(movieWithCast: MovieWithCast): Completable
 
     fun deleteMovieWithCast(movieWithCast: MovieWithCast): Completable
+
+    fun isMovieExists(id: Int): Single<Boolean>
 }
