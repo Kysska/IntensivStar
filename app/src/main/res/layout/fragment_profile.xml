@@ -39,31 +39,11 @@
 
         </RelativeLayout>
 
-        <FrameLayout
+        <ImageView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="-12dp">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_wave_big" />
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_wave_third" />
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_wave_second" />
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_wave" />
-        </FrameLayout>
+            android:layout_marginBottom="-12dp"
+            android:src="@drawable/layered_wave" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"
@@ -81,8 +61,7 @@
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/profileViewPager"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/secondaryBackground" />
+            android:layout_height="match_parent" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

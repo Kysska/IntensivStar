@@ -30,7 +30,8 @@
     <dimen name="tvshow_card_text_width">96dp</dimen>
 
     <!-- Image Item Cast -->
-    <dimen name="image_cast_item">88dp</dimen>
+    <dimen name="cast_item">98dp</dimen>
+    <dimen name="image_cast_item">78dp</dimen>
 
     <!-- App Bar Movie Detail -->
     <dimen name="app_bar_height">300dp</dimen>

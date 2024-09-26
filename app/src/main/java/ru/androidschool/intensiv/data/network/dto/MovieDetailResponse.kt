@@ -32,7 +32,7 @@ data class MovieDetailResponse(
     val backdropPath: String?,
     @SerializedName("video")
     val video: Boolean?,
-    @SerializedName("genre_ids")
+    @SerializedName("genres")
     val genres: List<GenreResponse>?,
     @SerializedName("runtime")
     val runtime: Int?,

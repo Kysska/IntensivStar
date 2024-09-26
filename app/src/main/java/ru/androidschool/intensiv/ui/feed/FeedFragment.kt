@@ -6,15 +6,11 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import io.reactivex.Completable
 import io.reactivex.Single
 import ru.androidschool.intensiv.R
-import ru.androidschool.intensiv.data.network.MovieApiClient
-import ru.androidschool.intensiv.data.repository.NowPlayingMovieRepositoryImpl
-import ru.androidschool.intensiv.data.repository.PopularMovieRepositoryImpl
-import ru.androidschool.intensiv.data.repository.UpcomingMovieRepositoryImpl
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
-import ru.androidschool.intensiv.domain.MovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.utils.MovieType
@@ -34,18 +30,6 @@ class FeedFragment : BaseFragment() {
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
-    }
-
-    private val nowPlayingMovieRepositoryImpl: MovieRepository by lazy {
-        NowPlayingMovieRepositoryImpl(MovieApiClient.apiClient)
-    }
-
-    private val popularMovieRepositoryImpl: MovieRepository by lazy {
-        PopularMovieRepositoryImpl(MovieApiClient.apiClient)
-    }
-
-    private val upcomingMovieRepositoryImpl: MovieRepository by lazy {
-        UpcomingMovieRepositoryImpl(MovieApiClient.apiClient)
     }
 
     private val options = navOptions {
@@ -73,27 +57,29 @@ class FeedFragment : BaseFragment() {
         setupSearchObserver()
 
         binding.moviesRecyclerView.adapter = adapter
+        adapter.clear()
 
         loadMovies()
     }
 
     private fun loadMovies() {
-        val nowPlayingMovies = nowPlayingMovieRepositoryImpl.getMovies()
-        val popularMovies = popularMovieRepositoryImpl.getMovies()
-        val upcomingMovies = upcomingMovieRepositoryImpl.getMovies()
-
         compositeDisposable.add(
-            Single.zip(
-                nowPlayingMovies,
-                popularMovies,
-                upcomingMovies
-            ) { nowPlaying, popular, upcoming ->
-                mapOf(
-                    MovieType.NOW_PLAYING to nowPlaying,
-                    MovieType.POPULAR to popular,
-                    MovieType.UPCOMING to upcoming
-                )
-            }
+            loadMoviesFromNetwork()
+                .flatMap { networkData ->
+                    Completable.merge(
+                        networkData.flatMap { (movieType, movies) ->
+                            movies.map { movie ->
+                                saveMoviesToLocal(movie, movieType)
+                                    .doOnComplete { Timber.d("Movie saved successfully") }
+                                    .doOnError { error -> Timber.e(error, "Error saving movie") }
+                            }
+                        }
+                    ).andThen(Single.just(networkData))
+                }
+                .onErrorResumeNext { error: Throwable ->
+                    Timber.e(error, "Error loading movies from network")
+                    loadMoviesFromLocal()
+                }
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ moviesMap ->
@@ -104,6 +90,62 @@ class FeedFragment : BaseFragment() {
                     Timber.e(error, "Error loading movies")
                 })
         )
+    }
+
+    private fun loadMoviesFromLocal(): Single<Map<MovieType, List<MovieCard>>> {
+        val nowPlayingLocal = nowPlayingMovieRepositoryImpl.getMoviesFromLocalByCategory()
+        val popularLocal = popularMovieRepositoryImpl.getMoviesFromLocalByCategory()
+        val upcomingLocal = upcomingMovieRepositoryImpl.getMoviesFromLocalByCategory()
+
+        return Single.zip(
+            nowPlayingLocal,
+            popularLocal,
+            upcomingLocal
+        ) { nowPlaying, popular, upcoming ->
+            mapOf(
+                MovieType.NOW_PLAYING to nowPlaying,
+                MovieType.POPULAR to popular,
+                MovieType.UPCOMING to upcoming
+            )
+        }.onErrorReturn { error ->
+            Timber.e(error, "Error loading local movies")
+            mapOf(
+                MovieType.NOW_PLAYING to emptyList(),
+                MovieType.POPULAR to emptyList(),
+                MovieType.UPCOMING to emptyList()
+            )
+        }
+    }
+
+    private fun loadMoviesFromNetwork(): Single<Map<MovieType, List<MovieCard>>> {
+        val nowPlayingNetwork = nowPlayingMovieRepositoryImpl.getMoviesFromNetwork()
+        val popularNetwork = popularMovieRepositoryImpl.getMoviesFromNetwork()
+        val upcomingNetwork = upcomingMovieRepositoryImpl.getMoviesFromNetwork()
+
+        return Single.zip(
+            nowPlayingNetwork,
+            popularNetwork,
+            upcomingNetwork
+        ) { nowPlaying, popular, upcoming ->
+            mapOf(
+                MovieType.NOW_PLAYING to nowPlaying,
+                MovieType.POPULAR to popular,
+                MovieType.UPCOMING to upcoming
+            )
+        }.onErrorResumeNext { error ->
+            Timber.e(error, "Error loading network movies")
+            Single.error(error)
+        }
+    }
+
+    private fun saveMoviesToLocal(moviesCard: MovieCard, movieType: MovieType): Completable {
+
+        val movieTypeLocal = when (movieType) {
+            MovieType.NOW_PLAYING -> nowPlayingMovieRepositoryImpl.saveMovie(moviesCard)
+            MovieType.POPULAR -> popularMovieRepositoryImpl.saveMovie(moviesCard)
+            MovieType.UPCOMING -> upcomingMovieRepositoryImpl.saveMovie(moviesCard)
+        }
+        return movieTypeLocal
     }
 
     private fun updateMovieCardList(moviesList: List<MovieCard>, movieType: MovieType) {
