@@ -6,10 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import io.reactivex.Single
 import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.BaseFragment
+import ru.androidschool.intensiv.utils.MovieType
 import ru.androidschool.intensiv.utils.extensions.applyLoader
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
@@ -42,17 +42,7 @@ class TvShowsFragment : BaseFragment() {
 
     private fun loadTvShowsMovieFromNetwork() {
         compositeDisposable.add(
-            tvShowRepositoryImpl.getMoviesFromNetwork()
-                .flatMap { tvShows ->
-                    tvShows.map { tvShow ->
-                        tvShowRepositoryImpl.saveMovie(tvShow)
-                    }
-                    Single.just(tvShows)
-                }
-                .onErrorResumeNext { error ->
-                    Timber.e(error, "Error loading tv shows from network")
-                    tvShowRepositoryImpl.getMoviesFromLocalByCategory()
-                }
+            movieCardRepositoryImpl.getMovies(MovieType.TV_SHOW)
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ movies ->
