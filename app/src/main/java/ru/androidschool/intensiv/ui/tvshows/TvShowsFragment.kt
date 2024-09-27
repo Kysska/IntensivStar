@@ -8,6 +8,8 @@ import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.domain.usecase.GetMoviesUseCase
+import ru.androidschool.intensiv.domain.usecase.LoadMoviesUseCase
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.utils.MovieType
 import ru.androidschool.intensiv.utils.extensions.applyLoader
@@ -21,6 +23,10 @@ class TvShowsFragment : BaseFragment() {
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
+    }
+
+    private val getMoviesUseCase: GetMoviesUseCase by lazy {
+        GetMoviesUseCase(movieCardRepositoryImpl)
     }
 
     override fun onCreateView(
@@ -42,7 +48,7 @@ class TvShowsFragment : BaseFragment() {
 
     private fun loadTvShowsMovieFromNetwork() {
         compositeDisposable.add(
-            movieCardRepositoryImpl.getMovies(MovieType.TV_SHOW)
+            getMoviesUseCase.execute(MovieType.TV_SHOW)
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ movies ->

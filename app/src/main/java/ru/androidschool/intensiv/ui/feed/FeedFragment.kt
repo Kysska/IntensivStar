@@ -11,6 +11,8 @@ import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
+import ru.androidschool.intensiv.domain.usecase.GetMoviesUseCase
+import ru.androidschool.intensiv.domain.usecase.LoadMoviesUseCase
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.utils.MovieType
 import ru.androidschool.intensiv.utils.extensions.applyLoader
@@ -30,6 +32,15 @@ class FeedFragment : BaseFragment() {
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
     }
+
+    private val getMoviesUseCase: GetMoviesUseCase by lazy {
+        GetMoviesUseCase(movieCardRepositoryImpl)
+    }
+
+    private val loadMoviesUseCase: LoadMoviesUseCase by lazy {
+        LoadMoviesUseCase(getMoviesUseCase)
+    }
+
 
     private val options = navOptions {
         anim {
@@ -63,7 +74,7 @@ class FeedFragment : BaseFragment() {
 
     private fun loadMovies() {
         compositeDisposable.add(
-            loadMoviesByCategory()
+            loadMoviesUseCase.execute()
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ moviesMap ->
@@ -74,27 +85,6 @@ class FeedFragment : BaseFragment() {
                     Timber.e(error, "Error loading movies")
                 })
         )
-    }
-
-    private fun loadMoviesByCategory(): Single<Map<MovieType, List<MovieCard>>> {
-        val nowPlayingNetwork = movieCardRepositoryImpl.getMovies(MovieType.NOW_PLAYING)
-        val popularNetwork = movieCardRepositoryImpl.getMovies(MovieType.POPULAR)
-        val upcomingNetwork = movieCardRepositoryImpl.getMovies(MovieType.UPCOMING)
-
-        return Single.zip(
-            nowPlayingNetwork,
-            popularNetwork,
-            upcomingNetwork
-        ) { nowPlaying, popular, upcoming ->
-            mapOf(
-                MovieType.NOW_PLAYING to nowPlaying,
-                MovieType.POPULAR to popular,
-                MovieType.UPCOMING to upcoming
-            )
-        }.onErrorResumeNext { error ->
-            Timber.e(error, "Error loading network movies")
-            Single.error(error)
-        }
     }
 
     private fun updateMovieCardList(moviesList: List<MovieCard>, movieType: MovieType) {
