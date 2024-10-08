@@ -1,11 +1,25 @@
-package ru.androidschool.intensiv.data.repository.base
+package ru.androidschool.intensiv.data.local.source
 
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import timber.log.Timber
 
-abstract class BaseRepository<T>() {
+abstract class BaseLocalDataSource<T>() {
+
+    protected fun performOperation(
+        dbOperation: () -> Completable,
+        tag: String,
+        nameOperation: String
+    ): Completable {
+        return dbOperation()
+            .doOnComplete {
+                Timber.tag(tag).d("$nameOperation completed successfully")
+            }
+            .doOnError { throwable ->
+                Timber.tag(tag).e(throwable, "Error $nameOperation")
+            }
+    }
 
     protected fun <R> fetchData(
         call: () -> Single<R>,
@@ -33,20 +47,6 @@ abstract class BaseRepository<T>() {
             }
             .doOnError { throwable ->
                 Timber.tag(tag).e(throwable)
-            }
-    }
-
-    protected fun performDatabaseOperation(
-        daoOperation: () -> Completable,
-        operationType: String,
-        tag: String
-    ): Completable {
-        return daoOperation()
-            .doOnComplete {
-                Timber.tag(tag).d("$operationType completed successfully")
-            }
-            .doOnError { throwable ->
-                Timber.tag(tag).e(throwable, "Error $operationType")
             }
     }
 }

@@ -6,7 +6,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import io.reactivex.Completable
 import io.reactivex.Single
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
@@ -64,22 +63,7 @@ class FeedFragment : BaseFragment() {
 
     private fun loadMovies() {
         compositeDisposable.add(
-            loadMoviesFromNetwork()
-                .flatMap { networkData ->
-                    Completable.merge(
-                        networkData.flatMap { (movieType, movies) ->
-                            movies.map { movie ->
-                                saveMoviesToLocal(movie, movieType)
-                                    .doOnComplete { Timber.d("Movie saved successfully") }
-                                    .doOnError { error -> Timber.e(error, "Error saving movie") }
-                            }
-                        }
-                    ).andThen(Single.just(networkData))
-                }
-                .onErrorResumeNext { error: Throwable ->
-                    Timber.e(error, "Error loading movies from network")
-                    loadMoviesFromLocal()
-                }
+            loadMoviesByCategory()
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ moviesMap ->
@@ -92,35 +76,10 @@ class FeedFragment : BaseFragment() {
         )
     }
 
-    private fun loadMoviesFromLocal(): Single<Map<MovieType, List<MovieCard>>> {
-        val nowPlayingLocal = nowPlayingMovieRepositoryImpl.getMoviesFromLocalByCategory()
-        val popularLocal = popularMovieRepositoryImpl.getMoviesFromLocalByCategory()
-        val upcomingLocal = upcomingMovieRepositoryImpl.getMoviesFromLocalByCategory()
-
-        return Single.zip(
-            nowPlayingLocal,
-            popularLocal,
-            upcomingLocal
-        ) { nowPlaying, popular, upcoming ->
-            mapOf(
-                MovieType.NOW_PLAYING to nowPlaying,
-                MovieType.POPULAR to popular,
-                MovieType.UPCOMING to upcoming
-            )
-        }.onErrorReturn { error ->
-            Timber.e(error, "Error loading local movies")
-            mapOf(
-                MovieType.NOW_PLAYING to emptyList(),
-                MovieType.POPULAR to emptyList(),
-                MovieType.UPCOMING to emptyList()
-            )
-        }
-    }
-
-    private fun loadMoviesFromNetwork(): Single<Map<MovieType, List<MovieCard>>> {
-        val nowPlayingNetwork = nowPlayingMovieRepositoryImpl.getMoviesFromNetwork()
-        val popularNetwork = popularMovieRepositoryImpl.getMoviesFromNetwork()
-        val upcomingNetwork = upcomingMovieRepositoryImpl.getMoviesFromNetwork()
+    private fun loadMoviesByCategory(): Single<Map<MovieType, List<MovieCard>>> {
+        val nowPlayingNetwork = movieCardRepositoryImpl.getMovies(MovieType.NOW_PLAYING)
+        val popularNetwork = movieCardRepositoryImpl.getMovies(MovieType.POPULAR)
+        val upcomingNetwork = movieCardRepositoryImpl.getMovies(MovieType.UPCOMING)
 
         return Single.zip(
             nowPlayingNetwork,
@@ -138,16 +97,6 @@ class FeedFragment : BaseFragment() {
         }
     }
 
-    private fun saveMoviesToLocal(moviesCard: MovieCard, movieType: MovieType): Completable {
-
-        val movieTypeLocal = when (movieType) {
-            MovieType.NOW_PLAYING -> nowPlayingMovieRepositoryImpl.saveMovie(moviesCard)
-            MovieType.POPULAR -> popularMovieRepositoryImpl.saveMovie(moviesCard)
-            MovieType.UPCOMING -> upcomingMovieRepositoryImpl.saveMovie(moviesCard)
-        }
-        return movieTypeLocal
-    }
-
     private fun updateMovieCardList(moviesList: List<MovieCard>, movieType: MovieType) {
         val movieItems = moviesList.map { movie ->
             MovieItem(movie) { clickedMovie ->
@@ -160,6 +109,8 @@ class FeedFragment : BaseFragment() {
                 MovieType.NOW_PLAYING -> R.string.recommended
                 MovieType.POPULAR -> R.string.popular
                 MovieType.UPCOMING -> R.string.upcoming
+                MovieType.TOP_RATED -> R.string.top_rated
+                MovieType.TV_SHOW -> R.string.tv_show
             },
             items = movieItems
         )

@@ -1,11 +1,10 @@
-package ru.androidschool.intensiv.domain
+package ru.androidschool.intensiv.data.repository.moviewithcast
 
 import io.reactivex.Completable
 import io.reactivex.Single
 import ru.androidschool.intensiv.domain.entity.MovieWithCast
 
-interface MovieWithCastRepository {
-
+interface LocalMovieWithCastDataSource {
     fun getMovieWithCast(id: Int): Single<MovieWithCast>
 
     fun saveMovieWithCast(movieWithCast: MovieWithCast): Completable

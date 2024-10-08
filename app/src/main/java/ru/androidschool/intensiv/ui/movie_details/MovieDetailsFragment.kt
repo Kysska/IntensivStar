@@ -49,11 +49,7 @@ class MovieDetailsFragment : BaseFragment() {
 
     private fun fetchMovieWithCastFromNetwork(id: Int) {
         compositeDisposable.add(
-            movieWithCastRepositoryImpl.getMovieWithCastFromNetwork(id)
-                .onErrorResumeNext { error ->
-                    Timber.e(error, "Error movie from network")
-                    movieWithCastRepositoryImpl.getMovieWithCastFromLocal(id)
-                }
+            movieWithCastRepositoryImpl.getMovieWithCast(id)
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ movieWithCast ->
