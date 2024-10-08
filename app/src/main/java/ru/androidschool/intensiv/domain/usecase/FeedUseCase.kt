@@ -4,7 +4,7 @@ import io.reactivex.Single
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.utils.MovieType
 
-class LoadMoviesUseCase(
+class FeedUseCase(
     private val getMoviesUseCase: GetMoviesUseCase
 ) {
     fun execute(): Single<Map<MovieType, List<MovieCard>>>{

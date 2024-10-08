@@ -6,13 +6,12 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import io.reactivex.Single
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.domain.usecase.GetMoviesUseCase
-import ru.androidschool.intensiv.domain.usecase.LoadMoviesUseCase
+import ru.androidschool.intensiv.domain.usecase.FeedUseCase
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.utils.MovieType
 import ru.androidschool.intensiv.utils.extensions.applyLoader
@@ -37,8 +36,8 @@ class FeedFragment : BaseFragment() {
         GetMoviesUseCase(movieCardRepositoryImpl)
     }
 
-    private val loadMoviesUseCase: LoadMoviesUseCase by lazy {
-        LoadMoviesUseCase(getMoviesUseCase)
+    private val feedUseCase: FeedUseCase by lazy {
+        FeedUseCase(getMoviesUseCase)
     }
 
 
@@ -74,7 +73,7 @@ class FeedFragment : BaseFragment() {
 
     private fun loadMovies() {
         compositeDisposable.add(
-            loadMoviesUseCase.execute()
+            feedUseCase.execute()
                 .applySchedulers()
                 .applyLoader(binding.progressBarContainer.progressBar)
                 .subscribe({ moviesMap ->
