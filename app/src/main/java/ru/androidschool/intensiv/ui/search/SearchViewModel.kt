@@ -9,8 +9,9 @@ import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
+import javax.inject.Inject
 
-class SearchViewModel(
+class SearchViewModel @Inject constructor(
     private val searchRepository: SearchRepository
 ) : ViewModel() {
 

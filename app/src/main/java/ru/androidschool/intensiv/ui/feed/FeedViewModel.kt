@@ -10,8 +10,9 @@ import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.utils.MovieType
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
+import javax.inject.Inject
 
-class FeedViewModel(
+class FeedViewModel @Inject constructor(
     private val feedUseCase: FeedUseCase
 ) : ViewModel() {
 

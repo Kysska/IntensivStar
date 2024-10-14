@@ -9,8 +9,9 @@ import ru.androidschool.intensiv.domain.entity.MovieWithCast
 import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
+import javax.inject.Inject
 
-class MovieDetailsViewModel(
+class MovieDetailsViewModel @Inject constructor(
     private val movieWithCastRepository: MovieWithCastRepository
 ) : ViewModel() {
 

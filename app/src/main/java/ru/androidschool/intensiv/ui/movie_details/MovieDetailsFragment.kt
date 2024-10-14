@@ -4,9 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import ru.androidschool.intensiv.MovieFinderApp
 import ru.androidschool.intensiv.databinding.MovieDetailsFragmentBinding
 import ru.androidschool.intensiv.domain.entity.CastCard
 import ru.androidschool.intensiv.domain.entity.MovieDetail
@@ -16,15 +17,17 @@ import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.ui.feed.FeedFragment
 import ru.androidschool.intensiv.utils.extensions.loadImage
 import timber.log.Timber
+import javax.inject.Inject
 
 class MovieDetailsFragment : BaseFragment() {
 
     private var _binding: MovieDetailsFragmentBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: MovieDetailsViewModel by viewModels {
-        MovieDetailsViewModelFactory(movieWithCastRepositoryImpl)
-    }
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+
+    private lateinit var viewModel: MovieDetailsViewModel
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
@@ -35,6 +38,9 @@ class MovieDetailsFragment : BaseFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        (requireActivity().application as MovieFinderApp).component.inject(this)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(MovieDetailsViewModel::class.java)
+
         _binding = MovieDetailsFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }

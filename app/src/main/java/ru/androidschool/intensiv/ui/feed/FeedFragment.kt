@@ -2,21 +2,21 @@ package ru.androidschool.intensiv.ui.feed
 
 import android.os.Bundle
 import android.view.*
-import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import ru.androidschool.intensiv.MovieFinderApp
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
-import ru.androidschool.intensiv.domain.usecase.GetMoviesUseCase
-import ru.androidschool.intensiv.domain.usecase.FeedUseCase
 import ru.androidschool.intensiv.ui.BaseFragment
 import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.utils.MovieType
 import timber.log.Timber
+import javax.inject.Inject
 
 class FeedFragment : BaseFragment() {
 
@@ -32,17 +32,10 @@ class FeedFragment : BaseFragment() {
         GroupAdapter<GroupieViewHolder>()
     }
 
-    private val getMoviesUseCase: GetMoviesUseCase by lazy {
-        GetMoviesUseCase(movieCardRepositoryImpl)
-    }
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
 
-    private val feedUseCase: FeedUseCase by lazy {
-        FeedUseCase(getMoviesUseCase)
-    }
-
-    private val viewModel: FeedViewModel by viewModels {
-        FeedViewModelFactory(feedUseCase)
-    }
+    private lateinit var viewModel: FeedViewModel
 
     private val options = navOptions {
         anim {
@@ -58,6 +51,9 @@ class FeedFragment : BaseFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        (requireActivity().application as MovieFinderApp).component.inject(this)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(FeedViewModel::class.java)
+
         _binding = FeedFragmentBinding.inflate(inflater, container, false)
         _searchBinding = FeedHeaderBinding.bind(binding.root)
         return binding.root
