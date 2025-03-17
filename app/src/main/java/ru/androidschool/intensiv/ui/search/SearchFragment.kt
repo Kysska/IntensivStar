@@ -4,22 +4,24 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import ru.androidschool.intensiv.MovieFinderApp
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.databinding.FragmentSearchBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.ui.BaseFragment
+import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.ui.common.OnBackButtonClickListener
 import ru.androidschool.intensiv.ui.feed.FeedFragment.Companion.KEY_ID
 import ru.androidschool.intensiv.ui.feed.FeedFragment.Companion.KEY_SEARCH
 import ru.androidschool.intensiv.ui.feed.MovieItem
-import ru.androidschool.intensiv.utils.extensions.applyLoader
-import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
+import javax.inject.Inject
 
 class SearchFragment : BaseFragment(), OnBackButtonClickListener {
 
@@ -35,11 +37,19 @@ class SearchFragment : BaseFragment(), OnBackButtonClickListener {
         GroupAdapter<GroupieViewHolder>()
     }
 
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+
+    private lateinit var viewModel: SearchViewModel
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        (requireActivity().application as MovieFinderApp).component.inject(this)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(SearchViewModel::class.java)
+
         _binding = FragmentSearchBinding.inflate(inflater, container, false)
         _searchBinding = FeedHeaderBinding.bind(binding.root)
 
@@ -56,26 +66,40 @@ class SearchFragment : BaseFragment(), OnBackButtonClickListener {
         binding.moviesRecyclerView.layoutManager = GridLayoutManager(context, GRID_SPAN_COUNT)
         binding.moviesRecyclerView.adapter = adapter
 
+        observeViewModel()
+
         if (searchTerm.isNotEmpty()) {
-            resultSearch(searchTerm)
+            viewModel.searchMovies(searchTerm)
+        }
+    }
+
+    private fun observeViewModel() {
+        viewModel.searchResults.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is DataState.Loading -> {
+                    binding.progressBarContainer.progressBar.visibility = View.VISIBLE
+                }
+
+                is DataState.Success -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    displaySearchResults(state.data)
+                }
+
+                is DataState.Error -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    Timber.e(state.exception, "Error searching movies")
+                }
+
+                is DataState.Empty -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    Timber.d("No search result")
+                }
+            }
         }
     }
 
     private fun getKeySearch(): String? {
         return requireArguments().getString(KEY_SEARCH)
-    }
-
-    private fun resultSearch(query: String) {
-        compositeDisposable.add(
-            searchRepository.getSearchMovie(query)
-                .applySchedulers()
-                .applyLoader(binding.progressBarContainer.progressBar)
-                .subscribe({ movies ->
-                    displaySearchResults(movies)
-                }, { error ->
-                    Timber.e(error, "Error searching movies")
-                })
-        )
     }
 
     private fun displaySearchResults(movies: List<MovieCard>) {

@@ -4,23 +4,30 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import ru.androidschool.intensiv.MovieFinderApp
 import ru.androidschool.intensiv.databinding.MovieDetailsFragmentBinding
 import ru.androidschool.intensiv.domain.entity.CastCard
 import ru.androidschool.intensiv.domain.entity.MovieDetail
 import ru.androidschool.intensiv.domain.entity.MovieWithCast
 import ru.androidschool.intensiv.ui.BaseFragment
+import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.ui.feed.FeedFragment
-import ru.androidschool.intensiv.utils.extensions.applyLoader
-import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import ru.androidschool.intensiv.utils.extensions.loadImage
 import timber.log.Timber
+import javax.inject.Inject
 
 class MovieDetailsFragment : BaseFragment() {
 
     private var _binding: MovieDetailsFragmentBinding? = null
     private val binding get() = _binding!!
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+
+    private lateinit var viewModel: MovieDetailsViewModel
 
     private val adapter by lazy {
         GroupAdapter<GroupieViewHolder>()
@@ -31,6 +38,9 @@ class MovieDetailsFragment : BaseFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        (requireActivity().application as MovieFinderApp).component.inject(this)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(MovieDetailsViewModel::class.java)
+
         _binding = MovieDetailsFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -40,41 +50,48 @@ class MovieDetailsFragment : BaseFragment() {
 
         val movieId = getMovieId()
 
-        fetchMovieWithCastFromNetwork(movieId)
+        observeViewModel()
+
+        viewModel.fetchMovieWithCast(movieId)
+    }
+
+    private fun observeViewModel() {
+        viewModel.movieDetails.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is DataState.Loading -> {
+                    binding.progressBarContainer.progressBar.visibility = View.VISIBLE
+                }
+
+                is DataState.Success -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    updateMovieDetailUi(state.data.movie)
+                    updateCastListUI(state.data.cast)
+
+                    observeFavoriteStatus(movieWithCast = state.data)
+                }
+
+                is DataState.Error -> {
+                    Timber.e(state.exception, "Error loading movie details")
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                }
+
+                is DataState.Empty -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    Timber.d("No result")
+                }
+            }
+        }
+    }
+
+    private fun observeFavoriteStatus(movieWithCast: MovieWithCast) {
+        viewModel.isFavorite.observe(viewLifecycleOwner) { isFavorite ->
+            binding.favoriteCheckBox.isChecked = isFavorite
+            onFavoriteCheckboxChanged(movieWithCast, isFavorite)
+        }
     }
 
     private fun getMovieId(): Int {
         return requireArguments().getInt(FeedFragment.KEY_ID)
-    }
-
-    private fun fetchMovieWithCastFromNetwork(id: Int) {
-        compositeDisposable.add(
-            movieWithCastRepositoryImpl.getMovieWithCast(id)
-                .applySchedulers()
-                .applyLoader(binding.progressBarContainer.progressBar)
-                .subscribe({ movieWithCast ->
-                    updateMovieDetailUi(movieWithCast.movie)
-                    updateCastListUI(movieWithCast.cast)
-
-                    checkFavoriteStatus(movieWithCast)
-                }, { networkError ->
-                    Timber.e(networkError, "Error loading movie detail from network")
-                })
-        )
-    }
-
-    private fun checkFavoriteStatus(movieWithCast: MovieWithCast) {
-        compositeDisposable.add(
-            movieWithCastRepositoryImpl.isMovieExists(movieWithCast.movie.id)
-                .applySchedulers()
-                .applyLoader(binding.progressBarContainer.progressBar)
-                .subscribe({ isFavorite ->
-                    onFavoriteCheckboxChanged(movieWithCast, true)
-                }, { error ->
-                    Timber.e(error, "Error checking favorite status")
-                    onFavoriteCheckboxChanged(movieWithCast, false)
-                })
-        )
     }
 
     private fun updateMovieDetailUi(movie: MovieDetail) {
@@ -101,29 +118,7 @@ class MovieDetailsFragment : BaseFragment() {
         binding.favoriteCheckBox.isChecked = isFavorite
 
         binding.favoriteCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                compositeDisposable.add(
-                    movieWithCastRepositoryImpl.saveMovieWithCast(movieWithCast)
-                        .applySchedulers()
-                        .subscribe({
-                            Timber.d("Saved to fav")
-                        }, { error ->
-                            Timber.e(error, "Failed to save movie")
-                            binding.favoriteCheckBox.isChecked = false
-                        })
-                )
-            } else {
-                compositeDisposable.add(
-                    movieWithCastRepositoryImpl.deleteMovieWithCast(movieWithCast)
-                        .applySchedulers()
-                        .subscribe({
-                            Timber.d("Delete fav")
-                        }, { error ->
-                            Timber.e(error, "Failed to save movie")
-                            binding.favoriteCheckBox.isChecked = true
-                        })
-                )
-            }
+            viewModel.onFavoriteCheckboxChanged(movieWithCast, isChecked)
         }
     }
 

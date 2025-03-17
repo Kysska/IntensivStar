@@ -8,8 +8,10 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import ru.androidschool.intensiv.MovieFinderApp
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FragmentWatchlistBinding
+import ru.androidschool.intensiv.domain.FavoriteMovieRepository
 import ru.androidschool.intensiv.domain.entity.MovieDetail
 import ru.androidschool.intensiv.domain.entity.MovieWithCast
 import ru.androidschool.intensiv.ui.BaseFragment
@@ -17,6 +19,7 @@ import ru.androidschool.intensiv.ui.feed.FeedFragment.Companion.KEY_ID
 import ru.androidschool.intensiv.utils.extensions.applyLoader
 import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
+import javax.inject.Inject
 
 class WatchlistFragment : BaseFragment() {
 
@@ -30,11 +33,16 @@ class WatchlistFragment : BaseFragment() {
         GroupAdapter<GroupieViewHolder>()
     }
 
+    @Inject
+    lateinit var favoriteMovieRepository: FavoriteMovieRepository
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        (requireActivity().application as MovieFinderApp).component.inject(this)
+
         _binding = FragmentWatchlistBinding.inflate(inflater, container, false)
         return binding.root
     }

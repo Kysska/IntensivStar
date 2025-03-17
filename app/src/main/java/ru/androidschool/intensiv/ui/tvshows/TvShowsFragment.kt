@@ -7,10 +7,12 @@ import android.view.ViewGroup
 import android.widget.Toast
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import ru.androidschool.intensiv.MovieFinderApp
 import ru.androidschool.intensiv.databinding.TvShowsFragmentBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
 import ru.androidschool.intensiv.domain.usecase.GetMoviesUseCase
 import ru.androidschool.intensiv.ui.BaseFragment
+import javax.inject.Inject
 
 class TvShowsFragment : BaseFragment(), TvShowPresenter.TvShowView {
 
@@ -21,9 +23,8 @@ class TvShowsFragment : BaseFragment(), TvShowPresenter.TvShowView {
         GroupAdapter<GroupieViewHolder>()
     }
 
-    private val getMoviesUseCase: GetMoviesUseCase by lazy {
-        GetMoviesUseCase(movieCardRepositoryImpl)
-    }
+    @Inject
+    lateinit var getMoviesUseCase: GetMoviesUseCase
 
     private val presenter: TvShowPresenter by lazy {
         TvShowPresenter(getMoviesUseCase, this)
@@ -34,6 +35,8 @@ class TvShowsFragment : BaseFragment(), TvShowPresenter.TvShowView {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        (requireActivity().application as MovieFinderApp).component.inject(this)
+
         _binding = TvShowsFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }

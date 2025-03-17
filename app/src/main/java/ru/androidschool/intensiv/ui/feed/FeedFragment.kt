@@ -2,21 +2,21 @@ package ru.androidschool.intensiv.ui.feed
 
 import android.os.Bundle
 import android.view.*
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
+import ru.androidschool.intensiv.MovieFinderApp
 import ru.androidschool.intensiv.R
 import ru.androidschool.intensiv.databinding.FeedFragmentBinding
 import ru.androidschool.intensiv.databinding.FeedHeaderBinding
 import ru.androidschool.intensiv.domain.entity.MovieCard
-import ru.androidschool.intensiv.domain.usecase.GetMoviesUseCase
-import ru.androidschool.intensiv.domain.usecase.FeedUseCase
 import ru.androidschool.intensiv.ui.BaseFragment
+import ru.androidschool.intensiv.ui.common.DataState
 import ru.androidschool.intensiv.utils.MovieType
-import ru.androidschool.intensiv.utils.extensions.applyLoader
-import ru.androidschool.intensiv.utils.extensions.applySchedulers
 import timber.log.Timber
+import javax.inject.Inject
 
 class FeedFragment : BaseFragment() {
 
@@ -32,14 +32,10 @@ class FeedFragment : BaseFragment() {
         GroupAdapter<GroupieViewHolder>()
     }
 
-    private val getMoviesUseCase: GetMoviesUseCase by lazy {
-        GetMoviesUseCase(movieCardRepositoryImpl)
-    }
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
 
-    private val feedUseCase: FeedUseCase by lazy {
-        FeedUseCase(getMoviesUseCase)
-    }
-
+    private lateinit var viewModel: FeedViewModel
 
     private val options = navOptions {
         anim {
@@ -55,6 +51,9 @@ class FeedFragment : BaseFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        (requireActivity().application as MovieFinderApp).component.inject(this)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(FeedViewModel::class.java)
+
         _binding = FeedFragmentBinding.inflate(inflater, container, false)
         _searchBinding = FeedHeaderBinding.bind(binding.root)
         return binding.root
@@ -68,22 +67,35 @@ class FeedFragment : BaseFragment() {
         binding.moviesRecyclerView.adapter = adapter
         adapter.clear()
 
-        loadMovies()
+        observeViewModel()
+        viewModel.loadMovies()
     }
 
-    private fun loadMovies() {
-        compositeDisposable.add(
-            feedUseCase.execute()
-                .applySchedulers()
-                .applyLoader(binding.progressBarContainer.progressBar)
-                .subscribe({ moviesMap ->
-                    moviesMap.forEach { (movieType, movies) ->
+    private fun observeViewModel() {
+        viewModel.moviesState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is DataState.Loading -> {
+                    binding.progressBarContainer.progressBar.visibility = View.VISIBLE
+                }
+
+                is DataState.Success -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    state.data.forEach { (movieType, movies) ->
                         updateMovieCardList(movies, movieType)
                     }
-                }, { error ->
-                    Timber.e(error, "Error loading movies")
-                })
-        )
+                }
+
+                is DataState.Error -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    Timber.e(state.exception, "Error loading movies")
+                }
+
+                is DataState.Empty -> {
+                    binding.progressBarContainer.progressBar.visibility = View.GONE
+                    Timber.d("No data found")
+                }
+            }
+        }
     }
 
     private fun updateMovieCardList(moviesList: List<MovieCard>, movieType: MovieType) {
